@@ -3,6 +3,18 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.4.3 — 2026-08-25
+
+- Fixed: "Launch Whisk at login" no longer unchecks itself after an upgrade —
+  the SMAppService registration keys off the code signature (which changes
+  every unsigned release), so the intent is now stored and re-asserted at
+  launch
+- Fixed: Check Now respected the auto-install switch and installed
+  immediately; a manual check now always reports the update and offers an
+  Install button — auto-install remains a background-check policy only
+- Activity rows can be double-clicked or right-clicked to reveal the file
+  where it is now (its destination for moves, renames, and the Trash)
+
 ## v0.4.2 — 2026-08-25
 
 - The Settings window keeps one consistent size across all tabs instead of

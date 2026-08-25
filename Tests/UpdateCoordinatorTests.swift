@@ -134,6 +134,17 @@ final class UpdateCoordinatorTests: XCTestCase {
         XCTAssertTrue(harness.notifier.posted.isEmpty, "auto-install replaces the notify path")
     }
 
+    func testManualCheckReportsButNeverAutoInstalls() {
+        let harness = Harness()
+        harness.settings.autoInstallUpdates = true
+        harness.stubLatest(version: "0.2.0")
+        harness.coordinator.check(manual: true)
+        XCTAssertEqual(harness.coordinator.availableUpdate?.version, "0.2.0")
+        XCTAssertTrue(harness.fetcher.downloadedURLs.isEmpty, "a button click must not install by itself")
+        XCTAssertTrue(harness.installer.installedZips.isEmpty)
+        XCTAssertEqual(harness.notifier.posted.count, 1, "the availability notice still fires once")
+    }
+
     func testManualInstallWithNoKnownUpdateDoesNothing() {
         let harness = Harness()
         harness.coordinator.installAvailable()

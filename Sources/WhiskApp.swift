@@ -4,6 +4,7 @@
 // depend on the popover having been opened. Exempt from coverage and audit.
 
 import AppKit
+import ServiceManagement
 import SwiftUI
 import UserNotifications
 
@@ -117,6 +118,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.updates = updates
         model.bindUpdates(updates)
         updates.start()
+
+        // Re-assert launch-at-login: the SMAppService registration keys off
+        // the code signature, and every upgrade of an unsigned build re-signs,
+        // silently unregistering it. The stored intent is the truth.
+        if settings.launchAtLoginDesired, SMAppService.mainApp.status != .enabled {
+            try? SMAppService.mainApp.register()
+        }
 
         // A windowless menu bar app launched via `open` gets App Napped, and
         // napped DispatchSourceTimers stall for minutes — the update check and

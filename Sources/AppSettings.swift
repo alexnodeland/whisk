@@ -73,6 +73,15 @@ struct AppSettings {
         }
     }
 
+    /// The user's launch-at-login intent. Stored separately from the actual
+    /// SMAppService registration because that registration keys off the app's
+    /// code signature — and an unsigned build re-signs on every upgrade,
+    /// silently dropping it. The intent is re-asserted at each launch.
+    var launchAtLoginDesired: Bool {
+        get { store.string(forKey: "launchAtLogin") == "1" }
+        nonmutating set { store.set(newValue ? "1" : nil, forKey: "launchAtLogin") }
+    }
+
     // MARK: Updates
 
     /// Background update checks (default on).

@@ -99,6 +99,16 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.recentActivityCount, 10)
     }
 
+    func testLaunchAtLoginDesiredDefaultsOffAndRoundTrips() {
+        let (settings, store) = make()
+        XCTAssertFalse(settings.launchAtLoginDesired)
+        settings.launchAtLoginDesired = true
+        XCTAssertTrue(settings.launchAtLoginDesired)
+        settings.launchAtLoginDesired = false
+        XCTAssertFalse(settings.launchAtLoginDesired)
+        XCTAssertNil(store.values["launchAtLogin"])
+    }
+
     func testAutoCheckUpdatesDefaultsOnAndRoundTrips() {
         let (settings, store) = make()
         XCTAssertTrue(settings.autoCheckUpdates)

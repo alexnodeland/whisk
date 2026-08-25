@@ -34,6 +34,12 @@ Feature: Self-updating
     Then the zip is downloaded and the installer replaces the bundle
     And no "available" notification is posted, because the install is the answer
 
+  Scenario: A manual check reports and offers, it never installs on its own
+    Given "Install updates automatically" is on
+    When the user clicks Check Now
+    Then the update is announced with an Install button
+    And nothing installs until the user clicks it
+
   Scenario: A failed download does not strand the app
     Given an update to "0.2.0" is known
     When the download fails

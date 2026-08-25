@@ -68,8 +68,10 @@ final class UpdateCoordinator {
         check()
     }
 
-    /// Check the latest release now, regardless of cadence (menu "Check Now").
-    func check() {
+    /// Check the latest release now, regardless of cadence. A `manual` check
+    /// (the Check Now button) only ever reports and offers — auto-install is
+    /// a background policy, not something a button click silently triggers.
+    func check(manual: Bool = false) {
         updateStatus = "Checking…"
         onStateChange?()
         fetcher.fetch(url: UpdatePlanner.latestReleaseURL) { data in
@@ -80,12 +82,12 @@ final class UpdateCoordinator {
                 self.onStateChange?()
                 return
             }
-            self.handle(release: release)
+            self.handle(release: release, manual: manual)
         }
     }
 
     /// Fold a fetched release into state and act on the configured policy.
-    private func handle(release: ReleaseInfo) {
+    private func handle(release: ReleaseInfo, manual: Bool) {
         guard UpdatePlanner.isNewer(release.version, than: currentVersion) else {
             availableUpdate = nil
             onStateChange?()
@@ -93,7 +95,7 @@ final class UpdateCoordinator {
         }
         availableUpdate = release
         onStateChange?()
-        if settings.autoInstallUpdates {
+        if !manual && settings.autoInstallUpdates {
             installAvailable()
             return
         }

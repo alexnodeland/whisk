@@ -3,12 +3,15 @@
 
 import SwiftUI
 
-/// Every retained activity entry, newest first.
+/// Every retained activity entry, newest first. Double-click or right-click a
+/// row to reveal the file where it is now (its destination when the action
+/// moved it — including into the Trash).
 struct ActivityListView: View {
     @EnvironmentObject private var model: AppViewModel
+    @State private var selection: Set<Int> = []
 
     var body: some View {
-        Table(rows) {
+        Table(rows, selection: $selection) {
             TableColumn("Time") { row in
                 Text(row.entry.ts.formatted(date: .abbreviated, time: .standard))
                     .monospacedDigit()
@@ -31,7 +34,18 @@ struct ActivityListView: View {
                     .help(row.entry.detail ?? "")
             }
         }
+        .contextMenu(forSelectionType: Int.self) { ids in
+            Button("Reveal in Finder") { reveal(ids) }
+        } primaryAction: { ids in
+            reveal(ids)
+        }
         .frame(minWidth: 640, minHeight: 360)
+    }
+
+    private func reveal(_ ids: Set<Int>) {
+        for row in rows where ids.contains(row.id) {
+            model.reveal(entry: row.entry)
+        }
     }
 
     private var rows: [Row] {

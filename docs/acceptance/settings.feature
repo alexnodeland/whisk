@@ -20,6 +20,11 @@ Feature: Settings
     When it is out of range or not a number
     Then it reads back clamped to 1–50, or as the default when unparsable
 
+  Scenario: Launch at login survives upgrades
+    Given "Launch Whisk at login" is on
+    When an upgrade replaces the app and its ad-hoc signature
+    Then the stored intent re-registers the login item at next launch
+
   Scenario: Update policy is configured in General
     Given the "check automatically" and "install automatically" switches
     Then they persist through the same store as every other setting

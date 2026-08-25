@@ -116,6 +116,12 @@ final class AppViewModel: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: activityLogPath)])
     }
 
+    /// Show an acted-on file where it is now — its destination when the
+    /// action moved it (moves, renames, the Trash), else where it was.
+    func reveal(entry: ActivityEntry) {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: entry.dst ?? entry.src)])
+    }
+
     /// The editor saves through the comment-preserving merge (ADR 0003): an
     /// untouched rule keeps its text verbatim, an edited rule keeps its
     /// leading comments. The vnode watch hot-reloads the result.
@@ -124,7 +130,7 @@ final class AppViewModel: ObservableObject {
         rulesFile?.write(RulesText.encode(set, preserving: original))
     }
 
-    func checkForUpdates() { updates?.check() }
+    func checkForUpdates() { updates?.check(manual: true) }
 
     /// The cadence-guarded background check (safe to call often).
     func tickUpdates() { updates?.tick() }
@@ -180,6 +186,7 @@ final class AppViewModel: ObservableObject {
     var launchAtLogin: Bool {
         get { SMAppService.mainApp.status == .enabled }
         set {
+            settings?.launchAtLoginDesired = newValue
             try? (newValue ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister())
             objectWillChange.send()
         }
