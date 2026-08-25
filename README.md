@@ -103,8 +103,8 @@ unzip, drag `Whisk.app` to Applications.
 </tr>
 </table>
 
-Builds are currently unsigned. Homebrew clears the quarantine flag for you;
-for a direct download, clear it once yourself:
+Builds are currently unsigned, so macOS blocks the first launch either way
+until you clear the quarantine flag once:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Whisk.app

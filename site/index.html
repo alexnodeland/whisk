@@ -327,7 +327,7 @@ footer .spacer { flex: 1; }
           Source &amp; releases
         </a>
       </div>
-      <p class="hero-note">macOS 26+ · universal binary · unsigned for now — Homebrew clears quarantine for you</p>
+      <p class="hero-note">macOS 26+ · universal binary · unsigned for now — one xattr clears the first-launch block</p>
     </div>
   </section>
 
@@ -610,7 +610,7 @@ footer .spacer { flex: 1; }
         <span class="key">then</span>
         <div>
           <pre id="cmd-install">brew install --cask whisk</pre>
-          <p class="hint">Homebrew clears the quarantine flag for you — builds are unsigned for now.</p>
+          <p class="hint">Builds are unsigned for now — if macOS blocks the first launch: <code>xattr -dr com.apple.quarantine /Applications/Whisk.app</code></p>
         </div>
       </div>
       <div class="step">

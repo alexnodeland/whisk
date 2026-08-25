@@ -23,14 +23,14 @@ cask "whisk" do
 
   app "Whisk.app"
 
-  caveats <<~EOS
-    Whisk is not yet signed or notarized. If macOS blocks the first launch:
-      xattr -dr com.apple.quarantine "#{appdir}/Whisk.app"
-  EOS
-
   zap trash: [
     "~/.config/whisk",
     "~/Library/Application Support/Whisk",
     "~/Library/Preferences/com.alexnodeland.whisk.plist",
   ]
+
+  caveats <<~EOS
+    Whisk is not yet signed or notarized. If macOS blocks the first launch:
+      xattr -dr com.apple.quarantine "#{appdir}/Whisk.app"
+  EOS
 end
