@@ -1,0 +1,13 @@
+{
+  "hooks": [
+    {
+      "matcher": "Bash(just build*)",
+      "hooks": [
+        {
+          "type": "afterToolResult",
+          "command": "just lint 2>&1 | tail -5"
+        }
+      ]
+    }
+  ]
+}

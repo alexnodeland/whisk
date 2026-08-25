@@ -1,0 +1,24 @@
+# Changelog
+
+All notable changes to Whisk. Full release notes with downloads live on the
+[GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
+
+## v0.1.0 — 2026-08-25
+
+- Initial release: rule-based folder cleanup from the menu bar
+- Declarative JSON5 rules file at `~/.config/whisk/rules.json`, hot-reloaded,
+  with a built-in editor window for the common cases
+- Conditions: name glob/regex, extension, kind, size, age (created/modified/added),
+  nested `all`/`any`/`not`
+- Actions: move/copy with `{date.*}` destination patterns and conflict
+  policies, rename templates, Trash-by-age, and approved shell commands
+- FSEvents watching with debounce, age-based wake-ups, and a safety-net rescan
+- Loop protection: self-write ledger, per-file cooldowns, and action budgets
+  that auto-pause runaway rules
+- Shell-command safety: argv-only execution, sanitized environment, timeouts,
+  and first-run approval from the menu
+- Dry-run preview mode, pause/resume (including "for 1 hour"), Run Now
+- Per-rule and global notifications
+- Activity log (JSONL) with an in-app activity window
+- `whisk://` URL scheme: sweep, pause, resume, dry-run
+- Launch at login; Homebrew cask distribution

@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(just build:*)",
+      "Bash(just test:*)",
+      "Bash(just coverage:*)",
+      "Bash(just lint:*)",
+      "Bash(just fmt:*)",
+      "Bash(just fmt-check:*)",
+      "Bash(just check:*)",
+      "Bash(just integration:*)",
+      "Bash(just shim-audit:*)",
+      "Bash(just clean:*)",
+      "Bash(make build:*)",
+      "Bash(make test:*)",
+      "Bash(make lint:*)",
+      "Bash(make check:*)",
+      "Bash(./build.sh:*)",
+      "Bash(./test.sh:*)",
+      "Bash(./scripts/integration-test.sh:*)",
+      "Bash(python3 scripts/coverage-gate.py:*)",
+      "Bash(python3 scripts/shim-audit.py:*)",
+      "Bash(swiftlint:*)",
+      "Bash(swift-format:*)"
+    ]
+  }
+}
