@@ -89,6 +89,9 @@ brew tap alexnodeland/tap
 brew install --cask whisk
 ```
 
+Newer Homebrew requires a one-time `brew trust alexnodeland/tap` for
+third-party taps — it will tell you if yours does.
+
 </td>
 </tr>
 <tr>
