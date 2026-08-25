@@ -25,6 +25,7 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var updateStatus: String?
 
     private(set) var rulesPath = ""
+    private(set) var activityLogPath = ""
 
     private var coordinator: SweepCoordinator?
     private var updates: UpdateCoordinator?
@@ -39,10 +40,13 @@ final class AppViewModel: ObservableObject {
         return paused ? MenuIcon.paused : MenuIcon.regular
     }
 
-    func bind(coordinator: SweepCoordinator, rulesFile: RulesFileAccessing, settings: AppSettings) {
+    func bind(
+        coordinator: SweepCoordinator, rulesFile: RulesFileAccessing, settings: AppSettings, activityLogPath: String
+    ) {
         self.coordinator = coordinator
         self.rulesFile = rulesFile
         self.settings = settings
+        self.activityLogPath = activityLogPath
         rulesPath = rulesFile.path
         coordinator.onStateChange = { [weak self] in
             Task { @MainActor in self?.refresh() }
@@ -105,6 +109,11 @@ final class AppViewModel: ObservableObject {
 
     func openRulesFile() {
         NSWorkspace.shared.open(URL(fileURLWithPath: rulesPath))
+    }
+
+    /// Show the activity log file in Finder.
+    func revealActivityLog() {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: activityLogPath)])
     }
 
     /// The editor saves through the comment-preserving merge (ADR 0003): an

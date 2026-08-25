@@ -334,11 +334,25 @@ private struct ConditionEditor: View {
 /// A strict "number + unit" control for thresholds, replacing free-text values
 /// like "7d" or "100KB". Off (no threshold) is an explicit state with its own
 /// label, entered by clearing the number and left by typing one.
+///
+/// The selected unit is view state, NOT derived from the amount — deriving it
+/// makes the picker snap back whenever the amount is empty or doesn't divide
+/// evenly by the chosen unit.
 private struct AmountUnitPicker: View {
     @Binding var amount: UInt64?
     let units: [(label: String, scale: UInt64)]
-    let defaultUnit: UInt64
     let offLabel: String
+    @State private var unit: UInt64
+
+    init(amount: Binding<UInt64?>, units: [(label: String, scale: UInt64)], defaultUnit: UInt64, offLabel: String) {
+        _amount = amount
+        self.units = units
+        self.offLabel = offLabel
+        // Show the stored amount in the largest unit that divides it evenly.
+        let stored = amount.wrappedValue ?? 0
+        let fitting = units.reversed().first { stored > 0 && stored % $0.scale == 0 }?.scale
+        _unit = State(initialValue: fitting ?? defaultUnit)
+    }
 
     var body: some View {
         HStack(spacing: 6) {
@@ -347,13 +361,20 @@ private struct AmountUnitPicker: View {
                 .font(.caption.monospaced())
                 .multilineTextAlignment(.trailing)
                 .frame(width: 56)
-            Picker("", selection: unitBinding) {
+            Picker("", selection: $unit) {
                 ForEach(units, id: \.scale) { unit in
                     Text(unit.label).tag(unit.scale)
                 }
             }
             .labelsHidden()
             .fixedSize()
+            .onChange(of: unit) { oldUnit, newUnit in
+                // Re-express the same count in the new unit: "7 days" becomes
+                // "7 weeks" — the count is what the user typed and keeps.
+                if let current = amount, current > 0 {
+                    amount = max(current / oldUnit, 1) * newUnit
+                }
+            }
             if amount == nil || amount == 0 {
                 Text(offLabel)
                     .foregroundStyle(.tertiary)
@@ -370,33 +391,18 @@ private struct AmountUnitPicker: View {
         }
     }
 
-    /// The largest unit that divides the stored amount evenly.
-    private var currentUnit: UInt64 {
-        guard let amount, amount > 0 else { return defaultUnit }
-        return units.reversed().first { amount % $0.scale == 0 }?.scale ?? units[0].scale
-    }
-
     private var valueBinding: Binding<Int?> {
         Binding(
             get: {
                 guard let amount, amount > 0 else { return nil }
-                return Int(amount / currentUnit)
+                return Int(amount / unit)
             },
             set: { newValue in
                 guard let newValue, newValue > 0 else {
                     amount = nil
                     return
                 }
-                amount = UInt64(newValue) * currentUnit
-            })
-    }
-
-    private var unitBinding: Binding<UInt64> {
-        Binding(
-            get: { currentUnit },
-            set: { newUnit in
-                let value = amount.map { max($0 / currentUnit, 1) } ?? 0
-                amount = value == 0 ? nil : value * newUnit
+                amount = UInt64(newValue) * unit
             })
     }
 }

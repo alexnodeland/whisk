@@ -23,12 +23,12 @@ struct SettingsView: View {
             AboutSettingsTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 560)
         .environmentObject(model)
     }
 }
 
-/// The activity log, browsable without leaving Settings.
+/// The activity log, browsable without leaving Settings. Sized like a real
+/// table window: wide enough for its columns, and resizable.
 private struct ActivitySettingsTab: View {
     @EnvironmentObject private var model: AppViewModel
     @Environment(\.openWindow) private var openWindow
@@ -36,16 +36,23 @@ private struct ActivitySettingsTab: View {
     var body: some View {
         VStack(spacing: 8) {
             ActivityListView()
-                .frame(minWidth: 520, minHeight: 340)
-            HStack {
-                Text("Also on disk as JSONL, for your own tooling.")
-                    .font(.caption)
+            HStack(spacing: 10) {
+                Text((model.activityLogPath as NSString).abbreviatingWithTildeInPath)
+                    .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text("· one JSON object per action")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
                 Spacer()
+                Button("Reveal in Finder") { model.revealActivityLog() }
                 Button("Open as Window") { openWindow(id: "activity") }
             }
         }
         .padding(12)
+        .frame(minWidth: 720, maxWidth: .infinity, minHeight: 420, maxHeight: .infinity)
     }
 }
 
@@ -83,6 +90,7 @@ private struct GeneralSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .frame(width: 460)
     }
 }
 
@@ -120,6 +128,7 @@ private struct AppearanceSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .frame(width: 460)
     }
 }
 
@@ -213,6 +222,7 @@ private struct SetupSettingsTab: View {
             .font(.caption.monospaced())
         }
         .formStyle(.grouped)
+        .frame(minWidth: 560, maxWidth: 680)
     }
 }
 

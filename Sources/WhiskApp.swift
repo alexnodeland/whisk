@@ -95,7 +95,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             home: home,
             timeZone: TimeZone.current)
         self.coordinator = coordinator
-        model.bind(coordinator: coordinator, rulesFile: rulesFile, settings: settings)
+        model.bind(
+            coordinator: coordinator, rulesFile: rulesFile, settings: settings,
+            activityLogPath: dataDir + "/activity.jsonl")
 
         if sweepOnce {
             coordinator.start()
@@ -160,6 +162,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+/// The menu bar label. Must be its own observing view: the App body is not an
+/// observation context, so an inline Image there renders once and never
+/// follows icon-style or pause changes.
+private struct MenuBarLabel: View {
+    @ObservedObject var model: AppViewModel
+
+    var body: some View {
+        Image(nsImage: model.menuIcon)
+    }
+}
+
 /// The app: a menu bar item plus the activity and editor windows.
 @main
 struct WhiskApp: App {
@@ -170,7 +183,7 @@ struct WhiskApp: App {
             MenuContentView()
                 .environmentObject(delegate.model)
         } label: {
-            Image(nsImage: delegate.model.menuIcon)
+            MenuBarLabel(model: delegate.model)
         }
         .menuBarExtraStyle(.window)
 

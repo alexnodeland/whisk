@@ -36,4 +36,7 @@ integration/smoke scripts exercise the same behavior against the real system.
 - [ ] Editor: dirty badge appears on edit, Save flashes "Saved", a commented
       file keeps its comments after a GUI save, and the age/size pickers
       write the expected conditions
+- [ ] Unit pickers hold a chosen unit (minutes/hours/weeks, KB/GB) instead of
+      snapping back; switching the Appearance icon changes the live menu bar
+      item; the Settings Activity tab shows full columns and can be resized
 - [ ] `brew install --cask alexnodeland/tap/whisk` on a clean machine

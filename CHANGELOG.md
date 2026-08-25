@@ -3,6 +3,16 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.4.1 — 2026-08-25
+
+- Fixed: the age/size unit pickers snapped back to days/MB — the unit was
+  derived from the stored amount instead of being real view state
+- Fixed: switching the menu bar icon in Appearance didn't change the actual
+  menu bar item (the label wasn't an observing view; it rendered once)
+- The Activity tab in Settings is now sized and resizable like a real table
+  window, and shows the JSONL log's path with a Reveal in Finder button
+- Settings tabs size themselves per tab instead of sharing one narrow frame
+
 ## v0.4.0 — 2026-08-25
 
 - GUI saves preserve hand-written comments (ADR 0013): a lossless document
