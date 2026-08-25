@@ -23,6 +23,9 @@ struct SettingsView: View {
             AboutSettingsTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
+        // One fixed size for every tab — per-tab sizing made the window jump
+        // around as you switched. Sized for the largest tab (Activity).
+        .frame(width: 720, height: 500)
         .environmentObject(model)
     }
 }
@@ -52,7 +55,6 @@ private struct ActivitySettingsTab: View {
             }
         }
         .padding(12)
-        .frame(minWidth: 720, maxWidth: .infinity, minHeight: 420, maxHeight: .infinity)
     }
 }
 
@@ -90,7 +92,6 @@ private struct GeneralSettingsTab: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
     }
 }
 
@@ -128,7 +129,6 @@ private struct AppearanceSettingsTab: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
     }
 }
 
@@ -222,7 +222,6 @@ private struct SetupSettingsTab: View {
             .font(.caption.monospaced())
         }
         .formStyle(.grouped)
-        .frame(minWidth: 560, maxWidth: 680)
     }
 }
 

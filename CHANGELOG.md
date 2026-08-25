@@ -3,6 +3,11 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.4.2 — 2026-08-25
+
+- The Settings window keeps one consistent size across all tabs instead of
+  resizing as you switch
+
 ## v0.4.1 — 2026-08-25
 
 - Fixed: the age/size unit pickers snapped back to days/MB — the unit was
