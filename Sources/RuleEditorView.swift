@@ -2,9 +2,10 @@
 // The built-in rules editor (deliberately narrow, ADR 0003): targets, per-target
 // rule lists (enable/reorder/delete), and a form covering exactly the v1
 // condition/action vocabulary. A rule whose match is anything other than a flat
-// `all` of simple conditions shows as read-only with "Edit in file". Saving
-// writes strict JSON — the file stays the source of truth.
-// Exempt from coverage and audit (presentation only).
+// `all` of simple conditions shows as read-only with "Edit in file". Saves go
+// through the comment-preserving merge (ADR 0013) — the file stays the source
+// of truth. Every field binds per keystroke so the dirty state (and Save) is
+// always live. Exempt from coverage and audit (presentation only).
 
 import SwiftUI
 
@@ -55,9 +56,17 @@ struct RuleEditorView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text("Comments in the file are preserved when you save.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                if let error = model.rulesError {
+                    Label(error, systemImage: "exclamationmark.octagon.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .lineLimit(2)
+                        .help(error)
+                } else {
+                    Text("Comments in the file are preserved when you save.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
                 Spacer()
                 if isDirty {
                     Label("Unsaved changes", systemImage: "circle.fill")
@@ -132,7 +141,7 @@ struct RuleEditorView: View {
                         TextField("Target folder", text: targetPathBinding)
                             .textFieldStyle(.roundedBorder)
                             .font(.body.monospaced())
-                        ForEach(Array(target.rules.enumerated()), id: \.offset) { index, _ in
+                        ForEach(Array(target.rules.enumerated()), id: \.element.id) { index, _ in
                             RuleCard(
                                 rule: ruleBinding(index),
                                 onDelete: { draft?.targets[selectedTarget].rules.remove(at: index) },
@@ -141,10 +150,15 @@ struct RuleEditorView: View {
                                     ? { draft?.targets[selectedTarget].rules.swapAt(index, index + 1) } : nil)
                         }
                         Button {
+                            // New rules start DISABLED: the template matches
+                            // every file and trashes it — a fresh rule must
+                            // never act before the user has shaped it. The id
+                            // must be unique or validation rejects the save.
+                            let taken = Set(draft?.targets.flatMap { $0.rules.map(\.id) } ?? [])
+                            var id = "rule-\(Int.random(in: 1000...9999))"
+                            while taken.contains(id) { id = "rule-\(Int.random(in: 1000...9999))" }
                             draft?.targets[selectedTarget].rules.append(
-                                Rule(
-                                    id: "rule-\(Int.random(in: 1000...9999))", match: .all([.kind(.file)]),
-                                    actions: [.trash]))
+                                Rule(id: id, enabled: false, match: .all([.kind(.file)]), actions: [.trash]))
                         } label: {
                             Label("Add Rule", systemImage: "plus")
                         }
@@ -356,7 +370,10 @@ private struct AmountUnitPicker: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            TextField("—", value: valueBinding, format: .number)
+            // A text-backed field, deliberately: TextField(value:format:) only
+            // commits on Enter or focus loss, which left Save disabled right
+            // after typing a number — the click looked dead.
+            TextField("—", text: valueBinding)
                 .textFieldStyle(.roundedBorder)
                 .font(.caption.monospaced())
                 .multilineTextAlignment(.trailing)
@@ -375,6 +392,14 @@ private struct AmountUnitPicker: View {
                     amount = max(current / oldUnit, 1) * newUnit
                 }
             }
+            .onChange(of: amount) { _, newAmount in
+                // An external change (Revert, hot-reload) can leave the chosen
+                // unit not dividing the stored amount — the field would show
+                // nothing while a threshold is live. Re-fit the unit; our own
+                // writes are always exact multiples, so this never fights them.
+                guard let newAmount, newAmount > 0, newAmount % unit != 0 || newAmount / unit == 0 else { return }
+                unit = units.reversed().first { newAmount % $0.scale == 0 }?.scale ?? units[0].scale
+            }
             if amount == nil || amount == 0 {
                 Text(offLabel)
                     .foregroundStyle(.tertiary)
@@ -391,18 +416,19 @@ private struct AmountUnitPicker: View {
         }
     }
 
-    private var valueBinding: Binding<Int?> {
+    private var valueBinding: Binding<String> {
         Binding(
             get: {
-                guard let amount, amount > 0 else { return nil }
-                return Int(amount / unit)
+                guard let amount, amount > 0 else { return "" }
+                return String(amount / unit)
             },
             set: { newValue in
-                guard let newValue, newValue > 0 else {
+                let digits = newValue.filter(\.isNumber)
+                guard let value = UInt64(digits), value > 0 else {
                     amount = nil
                     return
                 }
-                amount = UInt64(newValue) * unit
+                amount = value * unit
             })
     }
 }
@@ -469,7 +495,8 @@ private struct ActionRowEditor: View {
                 field(
                     ([spec.command] + spec.args).joined(separator: " "),
                     prompt: "/absolute/path/to/command --flag",
-                    help: "Absolute command path plus arguments; the matched file is appended as the final argument."
+                    help: "Absolute command path plus space-separated arguments; the matched file is "
+                        + "appended as the final argument. Arguments containing spaces: edit in the file."
                 ) { text in
                     let parts = text.split(separator: " ").map(String.init)
                     action = .run(

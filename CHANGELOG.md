@@ -3,6 +3,18 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.4.4 — 2026-08-25
+
+- Fixed: typing a number into "older than" / "larger than" left Save disabled
+  until the field lost focus — those fields (like every other editor field)
+  now update the draft on every keystroke
+- Editor hardening from a full pass: a validation-rejected save now shows its
+  error in the editor footer instead of failing silently; new rules are
+  created disabled (the template matches everything and trashes it) with a
+  guaranteed-unique id; rule rows key off the rule id so per-row state
+  follows reorders; and Revert can no longer leave a threshold field blank
+  while its condition is still live
+
 ## v0.4.3 — 2026-08-25
 
 - Fixed: "Launch Whisk at login" no longer unchecks itself after an upgrade —

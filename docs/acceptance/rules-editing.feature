@@ -43,3 +43,18 @@ Feature: Editing rules in the GUI
     Then age is a number with a minutes/hours/days/weeks unit picker
     And size is a number with a KB/MB/GB unit picker
     And clearing the number removes the condition ("any age" / "any size")
+
+  Scenario: Every keystroke counts toward the draft
+    When any editor field is typed into — thresholds included
+    Then the dirty state updates immediately and Save enables
+    And no field requires Enter or a focus change before Save works
+
+  Scenario: A rejected save is never silent
+    Given a draft the validator refuses (say, duplicate rule ids)
+    When it is saved
+    Then the validation error shows in the editor footer
+    And the draft stays dirty so nothing is lost
+
+  Scenario: A new rule cannot act before it is shaped
+    When "Add Rule" is clicked
+    Then the new rule is created disabled, with an id no other rule uses
