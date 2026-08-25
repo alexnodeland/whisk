@@ -123,7 +123,8 @@ consent prompts, nothing more. Whisk never touches a folder you didn't list.
 
 |  |  |
 | --- | --- |
-| 📝 **A rules file, not a database** | `~/.config/whisk/rules.json` is the source of truth — JSON5 with comments, hot-reloaded on every save, versionable and syncable. A built-in editor covers the common cases. |
+| 📝 **A rules file, not a database** | `~/.config/whisk/rules.json` is the source of truth — JSON5 with comments, hot-reloaded on every save, versionable and syncable ($XDG_CONFIG_HOME respected). |
+| ✏️ **An editor that respects the file** | a built-in editor covers the common cases, and saving from it preserves your hand-written comments. A full Settings window (⌘,) holds everything else. |
 | 🔍 **Conditions that compose** | name globs and regexes, extensions, file/folder kind, size, and age (created / modified / added), nested under `all` / `any` / `not`. |
 | 📦 **Four actions** | move/copy with date-pattern destinations, rename templates, Trash-by-age, and shell commands. |
 | 🫥 **Dry-run first** | preview mode announces every action it *would* take, and takes none. |

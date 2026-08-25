@@ -20,11 +20,13 @@ in-app updater (ADR 0009), Mac App Store distribution.
 
 ## 2. The rules file
 
-`~/.config/whisk/rules.json` — JSON5-relaxed JSON (comments, trailing commas,
-unquoted keys; ADR 0003). The file is the source of truth: Whisk hot-reloads it
-on every save, and the GUI editor writes strict JSON back to it (warning first
-when hand-written comments would be dropped). A parse failure never wipes
-state: the last-good rules stay active, the menu shows the diagnostic, and a
+`~/.config/whisk/rules.json` (honoring `XDG_CONFIG_HOME`) — JSON5-relaxed
+JSON (comments, trailing commas, unquoted keys; ADR 0003). The file is the
+source of truth: Whisk hot-reloads it on every save, and the GUI editor saves
+through a comment-preserving merge (ADR 0013) — untouched rules keep their
+text verbatim, edited rules keep their leading comments, and everything
+outside `targets` is left alone. A parse failure never wipes state: the
+last-good rules stay active, the menu and editor show the diagnostic, and a
 notification fires. On first launch, Whisk seeds the file with a disabled
 starter rule.
 
