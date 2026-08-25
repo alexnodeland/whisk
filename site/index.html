@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Whisk — keep your folders clean, automatically</title>
+<meta name="description" content="A rule-driven tidying utility for the macOS menu bar. Point it at a folder, give it rules, and it stays clean — moves, renames, Trash-by-age, and scripts, all undo-friendly.">
+<meta name="author" content="Alex Nodeland">
+<link rel="canonical" href="https://alexnodeland.github.io/whisk/">
+<meta property="og:title" content="Whisk">
+<meta property="og:description" content="Keep your folders clean, automatically. A rule-driven tidying utility for the macOS menu bar.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://alexnodeland.github.io/whisk/">
+<meta property="og:site_name" content="Whisk">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Whisk">
+<meta name="twitter:description" content="Keep your folders clean, automatically. A rule-driven tidying utility for the macOS menu bar.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%237A63F1'/%3E%3Cg%20stroke='white'%20fill='none'%20stroke-linecap='round'%3E%3Cpath%20d='M32%2012%20L32%2028'%20stroke-width='6'/%3E%3Cpath%20d='M32%2028%20C18%2035%2018%2049%2032%2054'%20stroke-width='3.5'/%3E%3Cpath%20d='M32%2028%20C46%2035%2046%2049%2032%2054'%20stroke-width='3.5'/%3E%3Cpath%20d='M32%2028%20L32%2054'%20stroke-width='3.5'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   Whisk — one self-contained page. No external requests, ever;
+   the deploy workflow greps for them and fails the build.
+
+   Identity face is monospace, deliberately. The thing this tool
+   is built around is a rules file — JSON you write by hand and
+   keep in version control. The sans is support, not the other
+   way round.
+
+   The four hues are semantic. They mark the four actions —
+   move, rename, trash, run — and nothing else, which is the
+   same job they do in the README diagrams.
+   ============================================================ */
+:root {
+  /* Ground: a violet-black, like a desk lamp over a dark desk. */
+  --ground:      #0F0D17;
+  --ground-2:    #14111F;
+  --surface:     #191627;
+  --surface-2:   #1F1B30;
+  --edge:        #2C2745;
+  --edge-bright: #3E3860;
+
+  --text:        #EFEDF8;
+  --text-2:      #A8A3C0;
+  --text-3:      #726C92;
+
+  /* Action hues — categorical, never decorative. */
+  --t1: #8B79F2;   /* move   */
+  --t2: #3FA294;   /* rename */
+  --t3: #C85B41;   /* trash  */
+  --t4: #E8A33D;   /* run    */
+
+  --accent: var(--t1);
+  --focus:  #B7AAFF;
+
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+
+  --measure: 1120px;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ground: #F5F4F9;  --ground-2: #EEEDF4;
+    --surface: #FFFFFF; --surface-2: #F8F7FC;
+    --edge: #DEDBEA;    --edge-bright: #C6C1DA;
+    --text: #171420;    --text-2: #4E4868; --text-3: #6F6A8A;
+    --t1: #5F4BD8; --t2: #1F7A6D; --t3: #B4432A; --t4: #B87516;
+    --focus: #5F4BD8;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ground); color: var(--text);
+  font: 16px/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+code { font-family: var(--mono); font-size: 0.92em; }
+
+.wrap { max-width: var(--measure); margin-inline: auto; padding-inline: 24px; }
+section { padding-block: 88px; }
+@media (max-width: 720px) { section { padding-block: 60px; } }
+
+.eyebrow {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-3);
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+}
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--edge); }
+h2 { font-size: clamp(26px, 3.6vw, 38px); line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
+h3 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.lede { color: var(--text-2); font-size: 17px; max-width: 64ch; margin: 14px 0 40px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.claims { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 24px; }
+.card, .panel { background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius); }
+.card { padding: 22px; }
+.panel { padding: 28px; }
+.card p { color: var(--text-2); font-size: 14.5px; margin-top: 8px; }
+.claim .tag {
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.claim h3 { margin-top: 8px; }
+.claim .why {
+  margin-top: 12px; padding-left: 12px; border-left: 2px solid var(--edge-bright);
+  font-family: var(--mono); font-size: 13px; color: var(--text-3); line-height: 1.55;
+}
+
+figure { margin: 0; }
+figure svg { display: block; width: 100%; height: auto; }
+figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--text-3); text-align: center; margin-top: 14px; }
+
+pre {
+  background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius);
+  padding: 18px 20px; overflow-x: auto;
+  font-family: var(--mono); font-size: 13px; line-height: 1.55; color: var(--text-2);
+}
+.k { color: var(--t1); } .s { color: var(--t2); } .c { color: var(--text-3); } .n { color: var(--t4); }
+
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th {
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-3); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--edge-bright);
+}
+td { padding: 10px 14px; border-bottom: 1px solid var(--edge); color: var(--text-2); vertical-align: top; }
+td:first-child { font-family: var(--mono); font-size: 13px; color: var(--text); white-space: nowrap; }
+
+/* ---------- topbar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 40; height: 56px;
+  background: color-mix(in srgb, var(--ground) 86%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--edge);
+}
+.topbar .wrap { height: 100%; display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-family: var(--mono); font-weight: 600; }
+.brand:hover { text-decoration: none; }
+.brand svg { display: block; }
+.topbar nav { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+.topbar nav a { font-family: var(--mono); font-size: 13px; color: var(--text-2); }
+.topbar nav a:hover { color: var(--text); text-decoration: none; }
+.ver {
+  font-family: var(--mono); font-size: 12px; color: var(--text-3);
+  border: 1px solid var(--edge-bright); border-radius: 999px; padding: 3px 10px;
+}
+@media (max-width: 620px) { .hide-sm { display: none; } }
+
+/* ---------- hero ---------- */
+.hero { padding-block: 96px 88px; }
+.hero h1 {
+  font-size: clamp(38px, 7.2vw, 82px); line-height: 0.98; letter-spacing: -0.035em;
+  font-weight: 780; max-width: 15ch;
+}
+.hero h1 .dim { color: var(--text-3); }
+.hero .sub { color: var(--text-2); font-size: 18px; max-width: 56ch; margin: 22px 0 36px; }
+
+/* The signature moment: one folder, swept while you watch. */
+.sweep { max-width: 660px; padding: 20px 22px 16px; }
+.sweep-head {
+  font-family: var(--mono); font-size: 13px; color: var(--text-3);
+  display: flex; gap: 12px; align-items: center; margin-bottom: 12px;
+}
+.sweep-head::after { content: ""; flex: 1; height: 1px; background: var(--edge); }
+.files { list-style: none; padding: 0; display: grid; gap: 7px; }
+.f {
+  display: flex; align-items: baseline; gap: 10px;
+  font-family: var(--mono); font-size: 13.5px; color: var(--text);
+}
+.f .leader { flex: 1; border-bottom: 1px dotted var(--edge-bright); transform: translateY(-4px); }
+.f .chip {
+  font-size: 12px; opacity: 0; white-space: nowrap;
+}
+.f .chip::before { content: "● "; font-size: 9px; vertical-align: 1px; }
+.chip.a-move   { color: var(--t1); }
+.chip.a-rename { color: var(--t2); }
+.chip.a-trash  { color: var(--t3); }
+.chip.a-run    { color: var(--t4); }
+.chip.a-fresh  { color: var(--text-3); }
+/* chips land one by one, then handled rows step back */
+.f:nth-child(1) .chip { animation: chip-in 0.4s ease-out 0.9s forwards; }
+.f:nth-child(2) .chip { animation: chip-in 0.4s ease-out 1.25s forwards; }
+.f:nth-child(3) .chip { animation: chip-in 0.4s ease-out 1.6s forwards; }
+.f:nth-child(4) .chip { animation: chip-in 0.4s ease-out 1.95s forwards; }
+.f:nth-child(5) .chip { animation: chip-in 0.4s ease-out 2.3s forwards; }
+.f:nth-child(6) .chip { animation: chip-in 0.4s ease-out 2.65s forwards; }
+.f.handled { animation: step-back 0.6s ease-out 3.4s forwards; }
+.f .namewrap { display: inline-grid; }
+.f .was, .f .now { grid-area: 1 / 1; }
+.f .now { opacity: 0; color: var(--t2); }
+.f.renamed .was { animation: fade-out 0.4s ease 3.4s forwards; }
+.f.renamed .now { animation: fade-in 0.4s ease 3.4s forwards; }
+@keyframes chip-in { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: none; } }
+@keyframes step-back { to { opacity: 0.32; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes fade-in { to { opacity: 1; } }
+.sweep-legend {
+  font-family: var(--mono); font-size: 12.5px; color: var(--text-3);
+  margin-top: 14px; position: relative; height: 1.2em;
+}
+.sweep-legend span { position: absolute; inset: 0; }
+.l-before { animation: legend-out 0.4s ease 3.4s forwards; }
+.l-after { opacity: 0; color: var(--t2); animation: legend-in 0.4s ease 3.6s forwards; }
+@keyframes legend-out { to { opacity: 0; } }
+@keyframes legend-in { to { opacity: 1; } }
+
+.install-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; margin-top: 32px; }
+.cmd {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius);
+  padding: 12px 16px; font-family: var(--mono); font-size: 13.5px;
+}
+.cmd .ps1 { color: var(--t2); user-select: none; }
+.copy {
+  font-family: var(--mono); font-size: 12px; color: var(--text-3);
+  background: none; border: 1px solid var(--edge-bright); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer;
+}
+.copy:hover { color: var(--text); }
+.copy[data-copied="1"] { color: var(--t2); border-color: var(--t2); }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--edge-bright); border-radius: var(--radius);
+  padding: 12px 18px; font-family: var(--mono); font-size: 13.5px; color: var(--text);
+}
+.btn:hover { text-decoration: none; border-color: var(--text-3); }
+.hero-note { font-family: var(--mono); font-size: 12.5px; color: var(--text-3); margin-top: 18px; }
+
+/* ---------- install steps ---------- */
+.step { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; margin-bottom: 18px; }
+.step .key {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-3); border: 1px solid var(--edge-bright); border-radius: 999px;
+  padding: 4px 12px; margin-top: 10px; min-width: 64px; text-align: center;
+}
+.step pre { margin: 0; }
+.step .hint { font-size: 13.5px; color: var(--text-3); margin-top: 6px; }
+
+.icon { color: var(--text-3); }
+
+footer { border-top: 1px solid var(--edge); padding-block: 28px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; font-family: var(--mono); font-size: 13px; color: var(--text-3); }
+footer a { color: var(--text-3); }
+footer a:hover { color: var(--text); }
+footer .spacer { flex: 1; }
+
+/* ---------- reduced motion: keep the end states, drop the motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .f .chip { opacity: 1; }
+  .f.handled { opacity: 0.32; }
+  .f.renamed .was { opacity: 0; }
+  .f.renamed .now { opacity: 1; }
+  .l-before { opacity: 0; }
+  .l-after { opacity: 1; }
+  svg animate, svg animateTransform, svg animateMotion { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Whisk — home">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="var(--t1)"/>
+        <g stroke="#fff" fill="none" stroke-linecap="round">
+          <path d="M32 12 L32 28" stroke-width="6"/>
+          <path d="M32 28 C18 35 18 49 32 54" stroke-width="3.5"/>
+          <path d="M32 28 C46 35 46 49 32 54" stroke-width="3.5"/>
+          <path d="M32 28 L32 54" stroke-width="3.5"/>
+        </g>
+      </svg>
+      whisk
+    </a>
+    <nav>
+      <a href="#how" class="hide-sm">How it works</a>
+      <a href="#rules" class="hide-sm">Rules</a>
+      <a href="#safety" class="hide-sm">Safety</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/alexnodeland/whisk">GitHub</a>
+      <span class="ver">v0.1.0</span>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ hero ============ -->
+  <section class="hero">
+    <div class="wrap">
+      <h1>Name the folder.<br><span class="dim">Whisk keeps it clean.</span></h1>
+      <p class="sub">
+        A rule-driven tidying utility for the macOS menu bar. Downloads, Desktop,
+        an inbox — give each one a few rules, and files get moved, renamed, aged
+        into the Trash, or handed to your scripts. You stop doing it by hand.
+      </p>
+
+      <div class="card sweep" role="img" aria-label="A folder of six files is swept: images moved, a screenshot renamed, an old installer trashed, an archive handed to a script — leaving the folder clean.">
+        <div class="sweep-head">~/Downloads</div>
+        <ol class="files">
+          <li class="f handled"><span>IMG_4231.heic</span><span class="leader"></span><span class="chip a-move">moved → Pictures/2026-08</span></li>
+          <li class="f renamed"><span class="namewrap"><span class="was">Screenshot 2026-08-25….png</span><span class="now">screenshot-2026-08-25.png</span></span><span class="leader"></span><span class="chip a-rename">renamed</span></li>
+          <li class="f handled"><span>OldApp.dmg</span><span class="leader"></span><span class="chip a-trash">trashed · 32 days old</span></li>
+          <li class="f handled"><span>archive.zip</span><span class="leader"></span><span class="chip a-run">ran my-unpack</span></li>
+          <li class="f handled"><span>invoice (3).pdf</span><span class="leader"></span><span class="chip a-move">moved → Documents/Invoices</span></li>
+          <li class="f"><span>Whisk-universal.zip</span><span class="leader"></span><span class="chip a-fresh">fresh — left alone</span></li>
+        </ol>
+        <div class="sweep-legend">
+          <span class="l-before">6 files · unsorted</span>
+          <span class="l-after">5 actions · 1 left fresh · all of it undoable</span>
+        </div>
+      </div>
+
+      <div class="install-row">
+        <div class="cmd"><span class="ps1">$</span><span id="brew-cmd">brew install --cask alexnodeland/tap/whisk</span><button class="copy" data-copy="#brew-cmd">copy</button></div>
+        <a class="btn" href="https://github.com/alexnodeland/whisk">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          Source &amp; releases
+        </a>
+      </div>
+      <p class="hero-note">macOS 26+ · universal binary · unsigned for now — Homebrew clears quarantine for you</p>
+    </div>
+  </section>
+
+  <!-- ============ how it works ============ -->
+  <section id="how">
+    <div class="wrap">
+      <div class="eyebrow">The loop</div>
+      <h2>Notice. Snapshot. Plan. Act.</h2>
+      <p class="lede">
+        Watching a folder is easy; trusting what you watched is not. Whisk treats
+        every wake-up — a file event, an age timer, the safety-net rescan — as a
+        reason to look again, never as the truth itself.
+      </p>
+
+      <figure class="panel">
+        <svg viewBox="0 0 1000 250" role="img" aria-label="Four steps: notice a change, re-enumerate the folder, plan actions in a pure core, then act through guarded shims.">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--edge-bright)"/>
+            </marker>
+          </defs>
+          <!-- 1 notice -->
+          <rect x="6" y="40" width="216" height="150" rx="10" fill="var(--surface-2)" stroke="var(--edge)"/>
+          <text x="114" y="70" text-anchor="middle" font-family="var(--mono)" font-size="11.5" letter-spacing="1.5" fill="var(--t1)">STEP 1</text>
+          <path d="M96 92 Q96 88 100 88 L110 88 L114 93 L130 93 Q134 93 134 97 L134 112 Q134 116 130 116 L100 116 Q96 116 96 112 Z" fill="none" stroke="var(--text-3)" stroke-width="1.5"/>
+          <circle cx="115" cy="102" r="6" fill="none" stroke="var(--t1)" stroke-width="1.5" opacity="0">
+            <animate attributeName="r" values="6;24" dur="2.2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.9;0" dur="2.2s" repeatCount="indefinite"/>
+          </circle>
+          <text x="114" y="150" text-anchor="middle" font-family="var(--sans)" font-size="16" font-weight="650" fill="var(--text)">notice a change</text>
+          <text x="114" y="172" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">FSEvents · timers · rescan</text>
+          <!-- 2 snapshot -->
+          <rect x="262" y="40" width="216" height="150" rx="10" fill="var(--surface-2)" stroke="var(--edge)"/>
+          <text x="370" y="70" text-anchor="middle" font-family="var(--mono)" font-size="11.5" letter-spacing="1.5" fill="var(--t1)">STEP 2</text>
+          <g fill="var(--text-3)">
+            <rect x="332" y="88" width="76" height="5" rx="2.5"><animate attributeName="opacity" values="0.35;1;1;0.35" keyTimes="0;0.15;0.85;1" dur="3.2s" repeatCount="indefinite"/></rect>
+            <rect x="332" y="99" width="58" height="5" rx="2.5"><animate attributeName="opacity" values="0.35;0.35;1;1;0.35" keyTimes="0;0.12;0.27;0.85;1" dur="3.2s" repeatCount="indefinite"/></rect>
+            <rect x="332" y="110" width="66" height="5" rx="2.5"><animate attributeName="opacity" values="0.35;0.35;1;1;0.35" keyTimes="0;0.24;0.39;0.85;1" dur="3.2s" repeatCount="indefinite"/></rect>
+          </g>
+          <text x="370" y="150" text-anchor="middle" font-family="var(--sans)" font-size="16" font-weight="650" fill="var(--text)">re-enumerate</text>
+          <text x="370" y="172" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">events trigger, never decide</text>
+          <!-- 3 plan -->
+          <rect x="518" y="40" width="216" height="150" rx="10" fill="var(--surface-2)" stroke="var(--edge)"/>
+          <text x="626" y="70" text-anchor="middle" font-family="var(--mono)" font-size="11.5" letter-spacing="1.5" fill="var(--t1)">STEP 3</text>
+          <path d="M626 80 L646 92 L646 114 L626 126 L606 114 L606 92 Z" fill="none" stroke="var(--t1)" stroke-width="1.8"/>
+          <path d="M618 103 L624 109 L636 95" fill="none" stroke="var(--t2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="26" stroke-dashoffset="26">
+            <animate attributeName="stroke-dashoffset" values="26;0;0;26" keyTimes="0;0.25;0.8;1" dur="3.6s" repeatCount="indefinite"/>
+          </path>
+          <text x="626" y="150" text-anchor="middle" font-family="var(--sans)" font-size="16" font-weight="650" fill="var(--text)">plan, purely</text>
+          <text x="626" y="172" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">rules → actions · 100% covered</text>
+          <!-- 4 act -->
+          <rect x="774" y="40" width="220" height="150" rx="10" fill="var(--surface-2)" stroke="var(--edge)"/>
+          <text x="884" y="70" text-anchor="middle" font-family="var(--mono)" font-size="11.5" letter-spacing="1.5" fill="var(--t1)">STEP 4</text>
+          <g opacity="0.9">
+            <rect x="800" y="92" width="34" height="20" rx="5" fill="var(--t1)"/>
+            <rect x="842" y="92" width="34" height="20" rx="5" fill="var(--t2)"/>
+            <rect x="884" y="92" width="34" height="20" rx="5" fill="var(--t3)"/>
+            <rect x="926" y="92" width="34" height="20" rx="5" fill="var(--t4)"/>
+          </g>
+          <text x="884" y="150" text-anchor="middle" font-family="var(--sans)" font-size="16" font-weight="650" fill="var(--text)">act, safely</text>
+          <text x="884" y="172" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">move · rename · trash · run</text>
+          <!-- connectors + pulse -->
+          <g stroke="var(--edge-bright)" stroke-width="2" marker-end="url(#ar)">
+            <path d="M228 115 L254 115"/>
+            <path d="M484 115 L510 115"/>
+            <path d="M740 115 L766 115"/>
+          </g>
+          <circle r="3.5" fill="var(--t1)">
+            <animateMotion dur="4.5s" repeatCount="indefinite" path="M228 115 L254 115 M484 115 L510 115 M740 115 L766 115"/>
+            <animate attributeName="opacity" values="0;1;1;0" dur="4.5s" repeatCount="indefinite"/>
+          </circle>
+          <text x="500" y="228" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">a sweep re-reads the whole folder — a missed event costs nothing</text>
+        </svg>
+      </figure>
+
+      <div class="claims">
+        <div class="card claim">
+          <div class="tag">re-enumerate</div>
+          <h3>The folder is the truth</h3>
+          <p class="why">FSEvents coalesces, drops, and lies by omission. Acting on events directly means acting on a stale picture — so Whisk only ever acts on a fresh listing.</p>
+        </div>
+        <div class="card claim">
+          <div class="tag">pure core</div>
+          <h3>One function decides everything</h3>
+          <p class="why">Snapshot + rules in, planned actions out — no I/O inside. CI holds the planner at 100% region coverage, so every branch of the matching and budget logic is exercised before it ships.</p>
+        </div>
+        <div class="card claim">
+          <div class="tag">ordered rules</div>
+          <h3>Ordering is a feature</h3>
+          <p class="why">Rules run top to bottom; a file consumed by move or trash is skipped by later rules in the same sweep. Without that, two overlapping rules quietly fight over the same file.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ rules ============ -->
+  <section id="rules" style="background:var(--ground-2); border-block:1px solid var(--edge)">
+    <div class="wrap">
+      <div class="eyebrow">The file</div>
+      <h2>Rules, not chores</h2>
+      <p class="lede">
+        One JSON5 file is the whole configuration — comments and trailing commas
+        welcome, hot-reloaded on every save, yours to sync and version. A
+        built-in editor covers the common cases; the file covers everything.
+      </p>
+
+      <pre><span class="c">// ~/.config/whisk/rules.json — reloaded whenever it changes</span>
+{
+  <span class="k">version</span>: <span class="n">1</span>,
+  <span class="k">targets</span>: [{
+    <span class="k">path</span>: <span class="s">"~/Downloads"</span>,
+    <span class="k">rules</span>: [
+      { <span class="k">id</span>: <span class="s">"file-images"</span>,
+        <span class="k">match</span>: { <span class="k">name</span>: { <span class="k">glob</span>: <span class="s">"*.{png,jpg,heic}"</span> } },
+        <span class="k">actions</span>: [{ <span class="k">move</span>: { <span class="k">to</span>: <span class="s">"~/Pictures/Inbox/{date.modified:yyyy-MM}"</span> } }] },
+      { <span class="k">id</span>: <span class="s">"trash-old-installers"</span>,
+        <span class="k">match</span>: { <span class="k">all</span>: [
+          { <span class="k">extension</span>: [<span class="s">"dmg"</span>, <span class="s">"pkg"</span>] },
+          { <span class="k">age</span>: { <span class="k">olderThan</span>: <span class="s">"7d"</span> } },
+        ]},
+        <span class="k">actions</span>: [{ <span class="k">trash</span>: {} }] },
+    ],
+  }],
+}</pre>
+
+      <div class="claims">
+        <div class="card claim">
+          <div class="tag">conditions</div>
+          <h3>Compose, to any depth</h3>
+          <p>Name globs and regexes, extensions, file/folder kind, size, and age
+          (created, modified, or added) — nested under <code>all</code> /
+          <code>any</code> / <code>not</code>.</p>
+        </div>
+        <div class="card claim">
+          <div class="tag">patterns</div>
+          <h3>Destinations that sort themselves</h3>
+          <p>Move targets and rename templates take <code>{name}</code>,
+          <code>{ext}</code>, and <code>{date.modified:yyyy-MM}</code>-style
+          tokens, with Finder-style conflict renaming built in.</p>
+        </div>
+        <div class="card claim">
+          <div class="tag">reload</div>
+          <h3>Broken saves don't break Whisk</h3>
+          <p class="why">A rules file mid-edit is often invalid. On a parse error Whisk keeps the last good ruleset running, shows the error, and picks up your next save.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ safety ============ -->
+  <section id="safety">
+    <div class="wrap">
+      <div class="eyebrow">Trust</div>
+      <h2>Built to refuse to make a mess</h2>
+      <p class="lede">
+        A tool that moves your files unattended has one job before all others:
+        never surprise you. Everything Whisk does is previewable, budgeted, and
+        reversible.
+      </p>
+
+      <figure class="panel">
+        <svg viewBox="0 0 1000 260" role="img" aria-label="Three safeties: dry-run previews actions without performing them, budgets auto-pause runaway rules, and removals go to the Trash where they stay recoverable.">
+          <defs>
+            <marker id="sar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--edge-bright)"/>
+            </marker>
+          </defs>
+          <!-- dry-run -->
+          <rect x="6" y="20" width="316" height="220" rx="10" fill="var(--surface-2)" stroke="var(--edge)"/>
+          <text x="164" y="50" text-anchor="middle" font-family="var(--mono)" font-size="11.5" letter-spacing="1.5" fill="var(--t1)">DRY-RUN</text>
+          <rect x="40" y="72" width="110" height="30" rx="7" fill="var(--surface)" stroke="var(--edge-bright)"/>
+          <text x="95" y="91" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--text-2)">report.pdf</text>
+          <path d="M158 87 L206 87" stroke="var(--edge-bright)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#sar)"/>
+          <rect x="214" y="72" width="74" height="30" rx="7" fill="none" stroke="var(--t1)" stroke-width="1.6" stroke-dasharray="5 4">
+            <animate attributeName="stroke-dashoffset" values="0;-18" dur="1.4s" repeatCount="indefinite"/>
+          </rect>
+          <text x="251" y="91" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--t1)">~/Docs</text>
+          <text x="164" y="180" text-anchor="middle" font-family="var(--sans)" font-size="16" font-weight="650" fill="var(--text)">previewed, not performed</text>
+          <text x="164" y="202" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">every action, announced first</text>
+          <!-- budgets -->
+          <rect x="342" y="20" width="316" height="220" rx="10" fill="var(--surface-2)" stroke="var(--edge)"/>
+          <text x="500" y="50" text-anchor="middle" font-family="var(--mono)" font-size="11.5" letter-spacing="1.5" fill="var(--t1)">BUDGETS</text>
+          <rect x="380" y="80" width="240" height="10" rx="5" fill="var(--surface)" stroke="var(--edge)"/>
+          <rect x="380" y="80" width="0" height="10" rx="5" fill="var(--t4)">
+            <animate attributeName="width" values="0;240;240;0" keyTimes="0;0.5;0.92;1" dur="6s" repeatCount="indefinite"/>
+            <animate attributeName="fill" values="var(--t4);var(--t4);var(--t3);var(--t3)" keyTimes="0;0.4;0.5;1" dur="6s" repeatCount="indefinite"/>
+          </rect>
+          <g opacity="0">
+            <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.5;0.58;0.92;1" dur="6s" repeatCount="indefinite"/>
+            <rect x="380" y="104" width="240" height="30" rx="7" fill="var(--surface)" stroke="var(--t3)"/>
+            <text x="392" y="123" font-family="var(--mono)" font-size="12" fill="var(--t3)">⏸ unpack-zips auto-paused</text>
+          </g>
+          <text x="500" y="180" text-anchor="middle" font-family="var(--sans)" font-size="16" font-weight="650" fill="var(--text)">runaways pause themselves</text>
+          <text x="500" y="202" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">cooldowns · ledgers · hard budgets</text>
+          <!-- trash -->
+          <rect x="678" y="20" width="316" height="220" rx="10" fill="var(--surface-2)" stroke="var(--edge)"/>
+          <text x="836" y="50" text-anchor="middle" font-family="var(--mono)" font-size="11.5" letter-spacing="1.5" fill="var(--t1)">UNDO-FRIENDLY</text>
+          <g transform="translate(812 70)" stroke="var(--t3)" stroke-width="2" fill="none" stroke-linecap="round">
+            <path d="M4 8 L8 44 Q8.5 48 12 48 L36 48 Q39.5 48 40 44 L44 8"/>
+            <path d="M0 8 L48 8"/>
+            <path d="M17 8 L17 4 Q17 1 20 1 L28 1 Q31 1 31 4 L31 8"/>
+            <path d="M15 16 L17 40 M24 16 L24 40 M33 16 L31 40" opacity="0.6"/>
+          </g>
+          <path d="M880 118 Q904 96 880 74" stroke="var(--t2)" stroke-width="2" fill="none" marker-end="url(#sar)" opacity="0.85"/>
+          <text x="836" y="180" text-anchor="middle" font-family="var(--sans)" font-size="16" font-weight="650" fill="var(--text)">Trash, never delete</text>
+          <text x="836" y="202" text-anchor="middle" font-family="var(--mono)" font-size="12.5" fill="var(--text-3)">every removal stays recoverable</text>
+        </svg>
+        <figcaption>shell commands run argv-only, in a sanitized environment, after a one-time approval</figcaption>
+      </figure>
+
+      <div class="claims">
+        <div class="card claim">
+          <div class="tag">loop guard</div>
+          <h3>It can't chase its own tail</h3>
+          <p class="why">A cleanup tool's classic failure is reacting to its own writes forever. Whisk keeps a ledger of what it just wrote, cools down per file-and-rule, and refuses moves into the source's own path at plan time.</p>
+        </div>
+        <div class="card claim">
+          <div class="tag">shell approval</div>
+          <h3>Your scripts, once approved</h3>
+          <p class="why">A rules file syncs between machines — a command you didn't write could arrive with it. New or changed commands are held until you approve that exact command from the menu, once.</p>
+        </div>
+        <div class="card claim">
+          <div class="tag">consent</div>
+          <h3>Only the folders you list</h3>
+          <p class="why">No sandbox theater, no blanket disk access: macOS asks for each folder your rules target, and a denied folder shows a "No access" badge instead of failing silently.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ scriptable ============ -->
+  <section style="background:var(--ground-2); border-block:1px solid var(--edge)">
+    <div class="wrap">
+      <div class="eyebrow">Automation</div>
+      <h2>A URL scheme and a log file</h2>
+      <p class="lede">
+        Whisk is a good citizen of your own automation: drive it from Shortcuts,
+        Raycast, or a script, and read back exactly what it did.
+      </p>
+      <div class="grid">
+        <div class="panel tbl-wrap">
+          <table>
+            <thead><tr><th>URL</th><th>Effect</th></tr></thead>
+            <tbody>
+              <tr><td>whisk://sweep</td><td>sweep every target now</td></tr>
+              <tr><td>whisk://pause?minutes=60</td><td>pause — for a while, or indefinitely</td></tr>
+              <tr><td>whisk://resume</td><td>resume sweeping</td></tr>
+              <tr><td>whisk://dry-run?enabled=true</td><td>toggle preview mode</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel tbl-wrap">
+          <table>
+            <thead><tr><th>Path</th><th>Holds</th></tr></thead>
+            <tbody>
+              <tr><td>~/.config/whisk/rules.json</td><td>your rules — the only file that's yours to edit</td></tr>
+              <tr><td>…/Whisk/activity.jsonl</td><td>every action, one JSON object per line</td></tr>
+              <tr><td>…/Whisk/approvals.json</td><td>the shell commands you've approved</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ install ============ -->
+  <section id="install">
+    <div class="wrap">
+      <div class="eyebrow">Install</div>
+      <h2>Two commands to a clean folder</h2>
+      <p class="lede">macOS 26 or later, Apple Silicon or Intel — one universal binary.</p>
+
+      <div class="step">
+        <span class="key">first</span>
+        <div>
+          <pre id="cmd-tap">brew tap alexnodeland/tap</pre>
+        </div>
+      </div>
+      <div class="step">
+        <span class="key">then</span>
+        <div>
+          <pre id="cmd-install">brew install --cask whisk</pre>
+          <p class="hint">Homebrew clears the quarantine flag for you — builds are unsigned for now.</p>
+        </div>
+      </div>
+      <div class="step">
+        <span class="key">run</span>
+        <div>
+          <pre>open -a Whisk</pre>
+          <p class="hint">First launch seeds <code>~/.config/whisk/rules.json</code> with a commented starter file, and macOS asks for access to the folders your rules touch.</p>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:24px">
+        <div class="card">
+          <h3>Direct download</h3>
+          <p>Grab <code>Whisk-universal.zip</code> from the
+          <a href="https://github.com/alexnodeland/whisk/releases/latest">latest release</a>,
+          drag to Applications, and clear quarantine once:
+          <code>xattr -dr com.apple.quarantine /Applications/Whisk.app</code></p>
+        </div>
+        <div class="card">
+          <h3>Build from source</h3>
+          <p>Pure <code>swiftc</code> — no Xcode project to open.
+          <code>just setup &amp;&amp; just dev</code> builds and launches;
+          <code>just check</code> runs the full CI gate, 100% coverage included.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ note ============ -->
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="panel" style="max-width:70ch">
+        <h3>A note on what it touches</h3>
+        <p style="color:var(--text-2); font-size:14.5px; margin-top:8px">
+          Whisk acts only on the folders your rules list, asks macOS for consent
+          to each one, and prefers reversible operations — the Trash over
+          deletion, previews over surprises. It's a personal tool, shared as-is.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/alexnodeland/whisk">GitHub</a>
+    <a href="https://github.com/alexnodeland/whisk/releases">Releases</a>
+    <a href="https://github.com/alexnodeland/whisk/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/alexnodeland/whisk/blob/main/docs/rfcs/0001-whisk.md">Rules reference</a>
+    <a href="https://github.com/alexnodeland/whisk/blob/main/.github/CONTRIBUTING.md">Contributing</a>
+    <span class="spacer"></span>
+    <span>MIT · © 2026 <a href="https://github.com/alexnodeland">Alex Nodeland</a></span>
+  </div>
+</footer>
+
+<script>
+// Copy buttons. Progressive enhancement — nothing on this page depends on JS.
+document.querySelectorAll(".copy").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var el = document.querySelector(btn.dataset.copy);
+    if (!el || !navigator.clipboard) return;
+    navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+      btn.dataset.copied = "1";
+      btn.textContent = "copied";
+      setTimeout(function () {
+        delete btn.dataset.copied;
+        btn.textContent = "copy";
+      }, 1600);
+    });
+  });
+});
+</script>
+
+</body>
+</html>

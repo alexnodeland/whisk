@@ -22,3 +22,6 @@ All notable changes to Whisk. Full release notes with downloads live on the
 - Activity log (JSONL) with an in-app activity window
 - `whisk://` URL scheme: sweep, pause, resume, dry-run
 - Launch at login; Homebrew cask distribution
+- Project site: one self-contained page with no external requests — the deploy
+  workflow fails if that ever stops being true — plus an illustrated README
+  with hand-drawn animated SVG diagrams

@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: [docs/**]
+    paths: ["site/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -23,11 +23,29 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      # The site's promise is "one file, no external requests". Grep for the
+      # ways a page can fetch from another host and fail the deploy if any
+      # appear. Not simply "every absolute URL": the page's own canonical and
+      # outbound <a href> links are absolute on purpose.
+      - name: Verify the site is self-contained
+        run: |
+          fail=0
+          check() {
+            if grep -qE "$2" site/index.html; then
+              echo "::error::site/index.html is not self-contained: $1"
+              fail=1
+            fi
+          }
+          check "external src= (script, image, iframe or media)" 'src="https?://'
+          check "external url() in CSS"                          'url\((["'"'"'])?https?://'
+          check "@import in CSS"                                 '@import'
+          check "external <link> that fetches"                   '<link[^>]+rel="(stylesheet|preload|prefetch|preconnect|dns-prefetch|modulepreload)"[^>]*href="https?://'
+          exit $fail
+
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/site
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

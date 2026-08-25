@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 330" width="1000" height="330" role="img" aria-label="Pipeline: notice a change, re-enumerate the folder, plan actions in a pure core, then act through guarded shims">
+  <title>Whisk pipeline</title>
+
+  <defs>
+    <linearGradient id="pcard" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#211E33"/>
+      <stop offset="1" stop-color="#151221"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#524B78"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="330" rx="16" fill="url(#pcard)"/>
+  <rect x="0.5" y="0.5" width="999" height="329" rx="16" fill="none" stroke="#332E4C"/>
+
+  <g font-family="ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+
+    <!-- ============ 1. notice ============ -->
+    <g>
+      <rect x="40" y="70" width="188" height="150" rx="12" fill="#1C1930" stroke="#363052"/>
+      <text x="134" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#8B79F2" letter-spacing="1.2">STEP 1</text>
+      <!-- a folder, with an FSEvents ripple leaving it -->
+      <g transform="translate(110 118)">
+        <path d="M0 6 Q0 2 4 2 L16 2 L21 8 L44 8 Q48 8 48 12 L48 34 Q48 38 44 38 L4 38 Q0 38 0 34 Z" fill="#120F1E" stroke="#4B4470" stroke-width="1.5"/>
+      </g>
+      <circle cx="134" cy="138" r="8" fill="none" stroke="#8B79F2" stroke-width="1.5" opacity="0">
+        <animate attributeName="r" values="8;30" dur="2.2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;0" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <text x="134" y="176" text-anchor="middle" font-size="16" font-weight="600" fill="#EFECF8">notice a change</text>
+      <text x="134" y="197" text-anchor="middle" font-size="12.5" fill="#948FB0">FSEvents · age timers · rescan</text>
+    </g>
+
+    <!-- ============ 2. snapshot ============ -->
+    <g>
+      <rect x="268" y="70" width="188" height="150" rx="12" fill="#1C1930" stroke="#363052"/>
+      <text x="362" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#8B79F2" letter-spacing="1.2">STEP 2</text>
+      <!-- the whole listing, taken fresh every sweep -->
+      <g fill="#4E4870">
+        <rect x="322" y="116" width="80" height="6" rx="3">
+          <animate attributeName="opacity" values="0.35;1;1;0.35" keyTimes="0;0.15;0.85;1" dur="3.2s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="322" y="129" width="62" height="6" rx="3">
+          <animate attributeName="opacity" values="0.35;0.35;1;1;0.35" keyTimes="0;0.1;0.25;0.85;1" dur="3.2s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="322" y="142" width="72" height="6" rx="3">
+          <animate attributeName="opacity" values="0.35;0.35;1;1;0.35" keyTimes="0;0.2;0.35;0.85;1" dur="3.2s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="322" y="155" width="52" height="6" rx="3">
+          <animate attributeName="opacity" values="0.35;0.35;1;1;0.35" keyTimes="0;0.3;0.45;0.85;1" dur="3.2s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+      <text x="362" y="176" text-anchor="middle" font-size="16" font-weight="600" fill="#EFECF8">re-enumerate</text>
+      <text x="362" y="197" text-anchor="middle" font-size="12.5" fill="#948FB0">events trigger, never decide</text>
+    </g>
+
+    <!-- ============ 3. plan ============ -->
+    <g>
+      <rect x="496" y="70" width="188" height="150" rx="12" fill="#1C1930" stroke="#363052"/>
+      <text x="590" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#8B79F2" letter-spacing="1.2">STEP 3</text>
+      <!-- the pure hexagonal core: no I/O inside the outline -->
+      <path d="M590 108 L614 122 L614 150 L590 164 L566 150 L566 122 Z"
+            fill="#120F1E" stroke="#8B79F2" stroke-width="1.8"/>
+      <path d="M580 136 L587 143 L601 128" fill="none" stroke="#3FA294" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="26" stroke-dashoffset="26">
+        <animate attributeName="stroke-dashoffset" values="26;0;0;26" keyTimes="0;0.25;0.8;1" dur="3.6s" repeatCount="indefinite"/>
+      </path>
+      <text x="590" y="176" text-anchor="middle" font-size="16" font-weight="600" fill="#EFECF8">plan, purely</text>
+      <text x="590" y="197" text-anchor="middle" font-size="12.5" fill="#948FB0">rules → actions, 100% covered</text>
+    </g>
+
+    <!-- ============ 4. act ============ -->
+    <g>
+      <rect x="724" y="70" width="236" height="150" rx="12" fill="#1C1930" stroke="#363052"/>
+      <text x="842" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#8B79F2" letter-spacing="1.2">STEP 4</text>
+      <!-- the four actions, one chip each, in their own hue -->
+      <g>
+        <rect x="758" y="122" width="36" height="22" rx="6" fill="#8B79F2" opacity="0.9"/>
+        <rect x="802" y="122" width="36" height="22" rx="6" fill="#3FA294" opacity="0.9"/>
+        <rect x="846" y="122" width="36" height="22" rx="6" fill="#C85B41" opacity="0.9"/>
+        <rect x="890" y="122" width="36" height="22" rx="6" fill="#E8A33D" opacity="0.9"/>
+        <rect x="758" y="122" width="36" height="22" rx="6" fill="none" stroke="#EFECF8" stroke-width="1.5" opacity="0">
+          <animate attributeName="x" values="758;758;802;846;890;890" keyTimes="0;0.1;0.3;0.5;0.7;1" dur="4.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;1;1;1;0" keyTimes="0;0.1;0.3;0.5;0.9;1" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+      <text x="842" y="176" text-anchor="middle" font-size="16" font-weight="600" fill="#EFECF8">act, safely</text>
+      <text x="842" y="197" text-anchor="middle" font-size="12.5" fill="#948FB0">move · rename · trash · run</text>
+    </g>
+
+    <!-- ============ connectors ============ -->
+    <g stroke="#524B78" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M232 145 L262 145"/>
+      <path d="M460 145 L490 145"/>
+      <path d="M688 145 L718 145"/>
+    </g>
+    <!-- a pulse travelling the whole chain -->
+    <circle r="4" fill="#8B79F2">
+      <animateMotion dur="4.5s" repeatCount="indefinite"
+        path="M232 145 L262 145 M460 145 L490 145 M688 145 L718 145"/>
+      <animate attributeName="opacity" values="0;1;1;0" dur="4.5s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- ============ footer note ============ -->
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5">
+      <rect x="40" y="252" width="920" height="44" rx="8" fill="#181528" stroke="#2E2947"/>
+      <text x="64" y="279" fill="#948FB0" xml:space="preserve"><tspan fill="#8B79F2">FSEvents</tspan><tspan fill="#615C80">&#160;wakes it&#160;&#160;·&#160;&#160;the planner is a pure function&#160;&#160;·&#160;&#160;</tspan><tspan fill="#C85B41">Trash</tspan><tspan fill="#615C80">, never delete&#160;&#160;·&#160;&#160;budgets pause runaway rules</tspan></text>
+    </g>
+  </g>
+</svg>
