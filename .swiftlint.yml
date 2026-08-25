@@ -1,0 +1,78 @@
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - build
+  - .build-tests
+
+disabled_rules:
+  - trailing_comma
+  # String(decoding:as:) is used deliberately: the non-failable form avoids
+  # unreachable nil-branches that the 100% region-coverage gate would flag.
+  - optional_data_string_conversion
+  - todo
+  - orphaned_doc_comment
+  - blanket_disable_command
+  - force_try
+  - force_cast
+  - non_optional_string_data_conversion
+  - opening_brace
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - contains_over_first_not_nil
+  - fatal_error_message
+  - first_where
+  - toggle_bool
+  - joined_default_parameter
+
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+type_body_length:
+  warning: 500
+  error: 800
+
+file_length:
+  warning: 600
+  error: 1000
+
+function_body_length:
+  warning: 80
+  error: 120
+
+# The state-machine dispatchers (SweepPlanner.plan, ConditionEvaluator.evaluate)
+# are flat switches over enum cases — high arm count, low real complexity.
+cyclomatic_complexity:
+  warning: 20
+  error: 40
+
+identifier_name:
+  min_length:
+    warning: 1
+  excluded:
+    - id
+    - i
+    - f
+    - d
+    - s
+    - e
+    - to
+
+# The CommandRunning port carries the full run contract (command, args, cwd,
+# env, timeout, completion); splitting it into a config struct would just move
+# the six names one level down.
+function_parameter_count:
+  warning: 6
+  error: 8
+
+large_tuple:
+  warning: 4
+
+nesting:
+  type_level: 3

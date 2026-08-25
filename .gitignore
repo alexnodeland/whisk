@@ -1,0 +1,7 @@
+build/
+.build-tests/
+.DS_Store
+*.swp
+*.swo
+*~
+.claude/settings.local.json

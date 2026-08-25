@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, Format, Test & 100% Coverage
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+        with:
+          just-version: 1.46.0
+
+      - name: Cache Homebrew
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew
+            /opt/homebrew/Cellar/swiftlint
+            /opt/homebrew/Cellar/swift-format
+          key: brew-${{ runner.os }}-${{ hashFiles('Brewfile') }}
+          restore-keys: brew-${{ runner.os }}-
+
+      - name: Install tools
+        run: brew bundle
+
+      - name: Lint (SwiftLint)
+        run: just lint
+
+      - name: Check formatting (swift-format)
+        run: just fmt-check
+
+      - name: Audit the I/O shims for regrown logic
+        run: just shim-audit
+
+      - name: Test + enforce 100% coverage gate
+        run: just coverage
+
+      # Runs the built app headlessly (--sweep-once) against temp directories:
+      # real FileManager moves, renames, and Trash, asserted from the activity log.
+      - name: Integration tests against the real filesystem
+        run: just integration
+
+      # The dev build is arm64 only. Releases ship a universal binary, so compile
+      # both arches here rather than discovering an x86_64-only break at tag time.
+      - name: Verify release-shape build (universal)
+        run: ./build.sh --release

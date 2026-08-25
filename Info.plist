@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>Whisk</string>
+    <key>CFBundleDisplayName</key>
+    <string>Whisk</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.alexnodeland.whisk</string>
+    <key>CFBundleVersion</key>
+    <string>0.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>Whisk</string>
+    <key>CFBundleIconFile</key>
+    <string>Whisk</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>MIT © alexnodeland</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>26.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>Whisk tidies your Downloads folder according to the rules you set.</string>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>Whisk tidies your Desktop according to the rules you set.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>Whisk tidies folders inside Documents according to the rules you set.</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.alexnodeland.whisk</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>whisk</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

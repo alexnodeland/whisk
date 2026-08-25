@@ -1,0 +1,38 @@
+# logic-manifest.txt — the single source of truth for the coverage boundary.
+#
+# These are the files that make up Whisk's pure logic core: the ONLY files
+# compiled into libWhiskCore.dylib, and therefore the only files the hard 100%
+# region/line/function gate can see (ADR 0005).
+#
+# A file belongs here iff it makes ZERO direct calls to Process / FileManager /
+# FSEvents / UN* / NSWorkspace / Timer / Date() / UserDefaults, and contains
+# ZERO SwiftUI/AppKit view bodies. Everything else is a shim, a view, or the
+# composition root, and is deliberately excluded.
+#
+# Read by:
+#   - test.sh            (what to compile into the coverage dylib)
+#   - coverage-gate.py   (which files MUST appear in the report — the pin that
+#                         stops the denominator shrinking silently)
+#   - CoverageManifestTests.swift (asserts the Swift-side list matches this file,
+#                         so adding a logic file without updating the manifest
+#                         fails the test suite rather than quietly going uncovered)
+#
+# Blank lines and `#` comments are ignored. One repo-relative path per line.
+
+Sources/Ports.swift
+Sources/Units.swift
+Sources/GlobMatcher.swift
+Sources/FileFacts.swift
+Sources/RuleModel.swift
+Sources/RuleParser.swift
+Sources/ConditionEvaluator.swift
+Sources/PatternRenderer.swift
+Sources/LoopGuard.swift
+Sources/ShellApproval.swift
+Sources/SweepPlanner.swift
+Sources/SweepScheduler.swift
+Sources/NotificationPlanner.swift
+Sources/ActivityLog.swift
+Sources/AppSettings.swift
+Sources/WhiskRoute.swift
+Sources/SweepCoordinator.swift

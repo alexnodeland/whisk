@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-26
+    # Job-level so the `if:` guards below are evaluated against a context that is
+    # unambiguously in scope. Declaring these inside the guarded step itself makes
+    # the condition depend on env the step has not established yet.
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      NOTARIZE_APPLE_ID: ${{ secrets.NOTARIZE_APPLE_ID }}
+      NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+      NOTARIZE_TEAM_ID: ${{ secrets.NOTARIZE_TEAM_ID }}
+      UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Import signing certificate
+        if: env.APPLE_CERTIFICATE != ''
+        run: |
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          echo -n "$APPLE_CERTIFICATE" | base64 --decode -o "$CERT_PATH"
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+      - name: Setup notarization profile
+        if: env.NOTARIZE_APPLE_ID != ''
+        run: |
+          xcrun notarytool store-credentials "Whisk-Notarize" \
+            --apple-id "$NOTARIZE_APPLE_ID" \
+            --password "$NOTARIZE_PASSWORD" \
+            --team-id "$NOTARIZE_TEAM_ID"
+
+      - name: Build universal binary
+        env:
+          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+          NOTARIZE_PROFILE: ${{ secrets.CODESIGN_IDENTITY != '' && 'Whisk-Notarize' || '' }}
+        run: |
+          chmod +x build.sh
+          ./build.sh --release --version "${{ steps.version.outputs.version }}"
+
+      - name: Verify universal binary
+        run: lipo -info build/Whisk.app/Contents/MacOS/Whisk
+
+      - name: Create stable-named archive for Homebrew
+        run: cp "build/Whisk-${{ steps.version.outputs.version }}.zip" build/Whisk-universal.zip
+
+      # Sign the archive's SHA-256 with the Ed25519 update key, if one is
+      # configured. Whisk v1 has no in-app updater (ADR 0009), but publishing the
+      # signature from the first release means a future updater can verify every
+      # release that came before it.
+      - name: Sign the update digest
+        if: env.UPDATE_SIGNING_KEY != ''
+        run: |
+          set -euo pipefail
+          KEY="$RUNNER_TEMP/update-signing.pem"
+          printf '%s' "$UPDATE_SIGNING_KEY" > "$KEY"
+          chmod 600 "$KEY"
+          DIGEST="$(shasum -a 256 build/Whisk-universal.zip | cut -d' ' -f1)"
+          printf '%s' "$DIGEST" > "$RUNNER_TEMP/digest.txt"
+          openssl pkeyutl -sign -inkey "$KEY" -rawin \
+            -in "$RUNNER_TEMP/digest.txt" -out "$RUNNER_TEMP/sig.bin"
+          base64 < "$RUNNER_TEMP/sig.bin" | tr -d '\n' > build/Whisk-universal.zip.sig
+          rm -f "$KEY"
+          echo "Signed digest ${DIGEST}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            build/Whisk-${{ steps.version.outputs.version }}.zip
+            build/Whisk-universal.zip
+            build/Whisk-universal.zip.sig

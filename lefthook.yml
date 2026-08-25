@@ -1,0 +1,14 @@
+pre-commit:
+  commands:
+    format:
+      glob: "*.swift"
+      run: just fmt
+      stage_fixed: true
+    lint:
+      glob: "*.swift"
+      run: just lint
+
+pre-push:
+  commands:
+    check:
+      run: just check
