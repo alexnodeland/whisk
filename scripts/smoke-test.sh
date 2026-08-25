@@ -25,6 +25,7 @@ FAIL=0
 APP_PID=""
 
 TMP="$(mktemp -d /tmp/whisk-smoke.XXXXXX)"
+TMP="$(cd "${TMP}" && pwd -P)"      # resolve /tmp → /private/tmp for FSEvents
 SUITE="whisk-smoke-$$"
 
 cleanup() {

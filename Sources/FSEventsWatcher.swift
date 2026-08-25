@@ -16,7 +16,10 @@ final class FSEventsWatcher: TargetWatching {
 
     private let rulesFilePath: String
     private var stream: FSEventStreamRef?
-    private var roots: [String] = []
+    /// (root as configured, root with symlinks resolved) — FSEvents reports
+    /// canonical paths (/private/tmp for /tmp), so matching uses the resolved
+    /// form while callbacks report the configured one.
+    private var roots: [(given: String, resolved: String)] = []
     private var rulesSource: DispatchSourceFileSystemObject?
 
     init(rulesFilePath: String) {
@@ -30,7 +33,7 @@ final class FSEventsWatcher: TargetWatching {
     }
 
     func setTargets(_ directories: [String]) {
-        roots = directories
+        roots = directories.map { ($0, URL(fileURLWithPath: $0).resolvingSymlinksInPath().path) }
         stopStream()
         guard !directories.isEmpty else { return }
 
@@ -43,7 +46,7 @@ final class FSEventsWatcher: TargetWatching {
             (0..<count).forEach { watcher.dispatch(path: cfPaths[$0]) }
         }
         let created = FSEventStreamCreate(
-            nil, callback, &context, directories as CFArray,
+            nil, callback, &context, roots.map(\.resolved) as CFArray,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
             SweepScheduler.eventDebounce,
             UInt32(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagUseCFTypes))
@@ -54,9 +57,15 @@ final class FSEventsWatcher: TargetWatching {
     }
 
     /// Route one event path to the target root that contains it (decided in the
-    /// covered core).
+    /// covered core), reporting the root as it was configured. Event paths and
+    /// roots are normalized identically first — FSEvents reports canonical
+    /// /private/tmp paths while resolvingSymlinksInPath prefers /tmp, so only
+    /// symmetric normalization makes the two comparable.
     private func dispatch(path: String) {
-        SweepCoordinator.targetRoot(forEventPath: path, roots: roots).map { onTargetEvent?($0, path) }
+        let normalized = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        SweepCoordinator.targetRoot(forEventPath: normalized, roots: roots.map(\.resolved))
+            .flatMap { resolved in roots.first { $0.resolved == resolved } }
+            .map { onTargetEvent?($0.given, path) }
     }
 
     private func stopStream() {
