@@ -23,7 +23,7 @@ DYLIB="${BUILD_DIR}/lib${MODULE}.dylib"
 BUNDLE_DIR="${BUILD_DIR}/WhiskTests.xctest"
 BUNDLE_EXEC="${BUNDLE_DIR}/Contents/MacOS/WhiskTests"
 COV_DIR="${BUILD_DIR}/cov"
-TARGET="arm64-apple-macosx26.0"
+TARGET="arm64-apple-macosx14.0"
 MANIFEST="${PROJECT_DIR}/logic-manifest.txt"
 
 COVERAGE=false

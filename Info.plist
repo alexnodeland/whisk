@@ -23,7 +23,7 @@
     <key>NSHumanReadableCopyright</key>
     <string>MIT © alexnodeland</string>
     <key>LSMinimumSystemVersion</key>
-    <string>26.0</string>
+    <string>14.0</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSDownloadsFolderUsageDescription</key>

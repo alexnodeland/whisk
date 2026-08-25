@@ -5,7 +5,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/alexnodeland/whisk/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/alexnodeland/whisk/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/alexnodeland/whisk?include_prereleases&label=release&style=flat-square)](https://github.com/alexnodeland/whisk/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](#license)
-[![Platform](https://img.shields.io/badge/macOS%2026%2B-informational?style=flat-square)](#install)
+[![Platform](https://img.shields.io/badge/macOS%2014%2B-informational?style=flat-square)](#install)
 [![Swift](https://img.shields.io/badge/Swift%206-F05138?style=flat-square&logo=swift&logoColor=white)](#contributing)
 
 **Folders don't stay clean. Whisk makes that someone else's problem.**

@@ -3,6 +3,13 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.1.1 — 2026-08-25
+
+- Lower the minimum macOS from 26 to 14 (Sonoma). The 26 floor was inherited
+  from the project template, not required by anything Whisk uses — the newest
+  APIs in the app (`ContentUnavailableView`, two-parameter `onChange`) are
+  macOS 14.
+
 ## v0.1.0 — 2026-08-25
 
 - Initial release: rule-based folder cleanup from the menu bar
