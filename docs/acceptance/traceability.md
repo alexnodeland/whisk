@@ -19,6 +19,7 @@ integration/smoke scripts exercise the same behavior against the real system.
 | pause-and-dry-run | AppSettingsTests, SweepCoordinatorTests |
 | url-scheme | WhiskRouteTests, SweepCoordinatorTests, scripts/smoke-test.sh |
 | updates | UpdatePlannerTests, UpdateCoordinatorTests, AppSettingsTests |
+| settings | AppSettingsTests (appearance + update policy persistence); window itself is presentation, checked manually below |
 
 ## Manual checklists (per release)
 
@@ -27,4 +28,6 @@ integration/smoke scripts exercise the same behavior against the real system.
 - [ ] Notification permission prompt appears once; notices arrive
 - [ ] Editor round-trip: change a rule in the GUI, confirm the file updated and
       hot-reload swept
+- [ ] ⌘, (or the menu's Settings…) opens Settings; all four tabs render;
+      toggles persist across a relaunch; About shows the right version
 - [ ] `brew install --cask alexnodeland/tap/whisk` on a clean machine

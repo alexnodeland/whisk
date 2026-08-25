@@ -19,7 +19,7 @@ final class UpdateFetcher: UpdateFetching {
         URLSession.shared.downloadTask(with: URL(string: url)!) { temporary, _, _ in
             // The temporary file dies with this closure, so claim it first.
             let destination = NSTemporaryDirectory() + "whisk-update-\(ProcessInfo.processInfo.globallyUniqueString).zip"
-            let moved = temporary.flatMap { try? FileManager.default.moveItem(atPath: $0.path, toPath: destination) }
+            let moved: Void? = temporary.flatMap { try? FileManager.default.moveItem(atPath: $0.path, toPath: destination) }
             DispatchQueue.main.async { completion(moved == nil ? nil : destination) }
         }.resume()
     }

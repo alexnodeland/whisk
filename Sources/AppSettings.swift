@@ -53,6 +53,26 @@ struct AppSettings {
         nonmutating set { store.set(newValue ? nil : "1", forKey: "notificationsDisabled") }
     }
 
+    // MARK: Appearance
+
+    /// Use the classic sparkles glyph in the menu bar instead of the brand whisk.
+    var sparklesMenuIcon: Bool {
+        get { store.string(forKey: "menuIconSparkles") == "1" }
+        nonmutating set { store.set(newValue ? "1" : nil, forKey: "menuIconSparkles") }
+    }
+
+    /// How many recent actions the popover lists (clamped to a sane range so a
+    /// hand-edited defaults value cannot blow the menu up).
+    var recentActivityCount: Int {
+        get {
+            guard let raw = store.string(forKey: "recentActivityCount"), let value = Int(raw) else { return 10 }
+            return min(max(value, 1), 50)
+        }
+        nonmutating set {
+            store.set(String(min(max(newValue, 1), 50)), forKey: "recentActivityCount")
+        }
+    }
+
     // MARK: Updates
 
     /// Background update checks (default on).

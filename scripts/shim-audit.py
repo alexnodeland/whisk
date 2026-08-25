@@ -61,6 +61,7 @@ EXEMPT = {
     "MenuContentView.swift",
     "RuleEditorView.swift",
     "ActivityListView.swift",
+    "SettingsView.swift",
 }
 
 # Constructs that represent a decision the code is making.

@@ -32,7 +32,10 @@ final class AppViewModel: ObservableObject {
 
     /// The menu bar icon; pause swaps it so the state reads at a glance.
     var menuIcon: NSImage {
-        paused ? MenuIcon.paused : MenuIcon.regular
+        if sparklesMenuIcon {
+            return paused ? MenuIcon.sparklesPaused : MenuIcon.sparkles
+        }
+        return paused ? MenuIcon.paused : MenuIcon.regular
     }
 
     func bind(coordinator: SweepCoordinator, rulesFile: RulesFileAccessing, settings: AppSettings) {
@@ -50,7 +53,7 @@ final class AppViewModel: ObservableObject {
     func refresh() {
         guard let coordinator else { return }
         statuses = coordinator.targetStatuses.values.sorted { $0.path < $1.path }
-        recent = coordinator.recentActivity.suffix(10).reversed()
+        recent = coordinator.recentActivity.suffix(settings?.recentActivityCount ?? 10).reversed()
         pending = coordinator.pendingApprovals
         autoPaused = coordinator.autoPausedRules.sorted()
         rulesError = coordinator.lastError?.message
@@ -130,6 +133,28 @@ final class AppViewModel: ObservableObject {
             settings?.autoInstallUpdates = newValue
             objectWillChange.send()
         }
+    }
+
+    var sparklesMenuIcon: Bool {
+        get { settings?.sparklesMenuIcon ?? false }
+        set {
+            settings?.sparklesMenuIcon = newValue
+            objectWillChange.send()
+        }
+    }
+
+    var recentActivityCount: Int {
+        get { settings?.recentActivityCount ?? 10 }
+        set {
+            settings?.recentActivityCount = newValue
+            refresh()
+            objectWillChange.send()
+        }
+    }
+
+    /// The running version, for the About tab.
+    var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
     }
 
     var notificationsEnabled: Bool {

@@ -3,6 +3,18 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.3.0 — 2026-08-25
+
+- Settings window (⌘, from the popover) with General (launch at login,
+  notifications, update policy), Appearance (menu bar icon choice, recent-list
+  length), Setup (rules file, watched-folder access status, activity log,
+  whisk:// reference), and About tabs
+- The menu bar popover slims down to its at-a-glance job: status, Run Now,
+  pause, dry-run, approvals, recent activity, and Edit Rules — everything
+  configuration-shaped moved into Settings
+- Appearance options: classic sparkles icon as an alternative to the brand
+  whisk, and a configurable recent-actions count (clamped 1–50)
+
 ## v0.2.0 — 2026-08-25
 
 - In-app updater (ADR 0012): daily background check against GitHub releases,

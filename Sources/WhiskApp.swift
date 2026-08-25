@@ -19,6 +19,14 @@ private final class NullNotifier: Notifying {
 enum MenuIcon {
     static let regular = draw(paused: false)
     static let paused = draw(paused: true)
+    static let sparkles = symbol("sparkles")
+    static let sparklesPaused = symbol("pause.circle")
+
+    private static func symbol(_ name: String) -> NSImage {
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: "Whisk")!
+        image.isTemplate = true
+        return image
+    }
 
     private static func draw(paused: Bool) -> NSImage {
         let image = NSImage(size: NSSize(width: 18, height: 18), flipped: true) { _ in
@@ -147,6 +155,11 @@ struct WhiskApp: App {
 
         Window("Whisk Rules", id: "editor") {
             RuleEditorView()
+                .environmentObject(delegate.model)
+        }
+
+        Settings {
+            SettingsView()
                 .environmentObject(delegate.model)
         }
     }

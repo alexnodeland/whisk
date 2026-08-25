@@ -33,6 +33,7 @@ struct WhiskButtonStyle: ButtonStyle {
 struct MenuContentView: View {
     @EnvironmentObject private var model: AppViewModel
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -225,31 +226,18 @@ struct MenuContentView: View {
     }
 
     private var footer: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Button("Open Rules File") { model.openRulesFile() }
-                Button("Edit Rules…") { openWindow(id: "editor") }
+        HStack {
+            Button("Edit Rules…") { openWindow(id: "editor") }
+                .buttonStyle(WhiskButtonStyle())
+            Button("Settings…") {
+                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
             }
             .buttonStyle(WhiskButtonStyle())
-            Toggle("Notifications", isOn: $model.notificationsEnabled)
-                .toggleStyle(.checkbox)
-                .font(.caption)
-            Toggle("Launch at login", isOn: $model.launchAtLogin)
-                .toggleStyle(.checkbox)
-                .font(.caption)
-            Toggle("Check for updates automatically", isOn: $model.autoCheckUpdates)
-                .toggleStyle(.checkbox)
-                .font(.caption)
-            Toggle("Install updates automatically", isOn: $model.autoInstallUpdates)
-                .toggleStyle(.checkbox)
-                .font(.caption)
-            HStack {
-                Button("Check for Updates") { model.checkForUpdates() }
-                    .buttonStyle(WhiskButtonStyle())
-                Spacer()
-                Button("Quit Whisk") { NSApp.terminate(nil) }
-                    .buttonStyle(WhiskButtonStyle())
-            }
+            .keyboardShortcut(",", modifiers: .command)
+            Spacer()
+            Button("Quit") { NSApp.terminate(nil) }
+                .buttonStyle(WhiskButtonStyle())
         }
     }
 

@@ -31,6 +31,7 @@ final class CoverageManifestTests: XCTestCase {
         "MenuContentView.swift": "SwiftUI view body",
         "RuleEditorView.swift": "SwiftUI view body",
         "ActivityListView.swift": "SwiftUI view body",
+        "SettingsView.swift": "SwiftUI view body",
         "FSEventsWatcher.swift": "FSEventStream + DispatchSource vnode watch",
         "MetadataReader.swift": "FileManager attribute reads",
         "FileOps.swift": "FileManager move/copy/trash",

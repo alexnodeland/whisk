@@ -74,6 +74,31 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.approvals, ApprovedCommands().approving("k"))
     }
 
+    func testSparklesMenuIconDefaultsOffAndRoundTrips() {
+        let (settings, store) = make()
+        XCTAssertFalse(settings.sparklesMenuIcon)
+        settings.sparklesMenuIcon = true
+        XCTAssertTrue(settings.sparklesMenuIcon)
+        settings.sparklesMenuIcon = false
+        XCTAssertFalse(settings.sparklesMenuIcon)
+        XCTAssertNil(store.values["menuIconSparkles"])
+    }
+
+    func testRecentActivityCountDefaultsClampsAndRejectsGarbage() {
+        let (settings, store) = make()
+        XCTAssertEqual(settings.recentActivityCount, 10)
+        settings.recentActivityCount = 15
+        XCTAssertEqual(settings.recentActivityCount, 15)
+        settings.recentActivityCount = 500
+        XCTAssertEqual(settings.recentActivityCount, 50)
+        settings.recentActivityCount = 0
+        XCTAssertEqual(settings.recentActivityCount, 1)
+        store.values["recentActivityCount"] = "999"
+        XCTAssertEqual(settings.recentActivityCount, 50)
+        store.values["recentActivityCount"] = "garbage"
+        XCTAssertEqual(settings.recentActivityCount, 10)
+    }
+
     func testAutoCheckUpdatesDefaultsOnAndRoundTrips() {
         let (settings, store) = make()
         XCTAssertTrue(settings.autoCheckUpdates)
