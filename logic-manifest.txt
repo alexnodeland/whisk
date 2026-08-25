@@ -36,3 +36,5 @@ Sources/ActivityLog.swift
 Sources/AppSettings.swift
 Sources/WhiskRoute.swift
 Sources/SweepCoordinator.swift
+Sources/UpdatePlanner.swift
+Sources/UpdateCoordinator.swift

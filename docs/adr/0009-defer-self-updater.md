@@ -1,6 +1,6 @@
 # ADR 0009 — Defer the in-app updater to v2; keep releases updater-ready
 
-- Status: Accepted
+- Status: Superseded by [ADR 0012](0012-in-app-updater.md)
 - Date: 2026-08-25
 - Deciders: alexnodeland
 - Related: NoDoze ADR 0018, ADR 0011

@@ -210,6 +210,36 @@ final class FakeWatcher: TargetWatching {
     }
 }
 
+/// A fetcher that answers from canned responses, synchronously.
+final class FakeUpdateFetcher: UpdateFetching {
+    var fetchResponse: Data?
+    var downloadResponse: String?
+    private(set) var fetchedURLs: [String] = []
+    private(set) var downloadedURLs: [String] = []
+
+    func fetch(url: String, completion: @escaping (Data?) -> Void) {
+        fetchedURLs.append(url)
+        completion(fetchResponse)
+    }
+
+    func download(url: String, completion: @escaping (String?) -> Void) {
+        downloadedURLs.append(url)
+        completion(downloadResponse)
+    }
+}
+
+/// An installer that records requests and reports a canned failure.
+final class FakeUpdateInstaller: UpdateInstalling {
+    var failure: String?
+    var callsCompletion = true
+    private(set) var installedZips: [String] = []
+
+    func install(zipPath: String, completion: @escaping (String?) -> Void) {
+        installedZips.append(zipPath)
+        if callsCompletion { completion(failure) }
+    }
+}
+
 /// Convenience factories for facts used across suites.
 enum Fixtures {
     /// A file fact with every date defaulting to the epoch-ish base instant.

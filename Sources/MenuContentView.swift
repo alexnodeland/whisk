@@ -4,6 +4,31 @@
 
 import SwiftUI
 
+/// A deliberately high-contrast button: primary-colored label on a subtle
+/// bezel drawn by us, not the system. The MenuBarExtra window never becomes
+/// key, and system bezels render their "inactive" look there — washed-out
+/// labels that are genuinely hard to read. Owning the bezel sidesteps that.
+struct WhiskButtonStyle: ButtonStyle {
+    var prominent = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .foregroundStyle(.primary)
+            .background(
+                Color.primary.opacity(configuration.isPressed ? 0.22 : (prominent ? 0.12 : 0.07)),
+                in: RoundedRectangle(cornerRadius: 6)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(Color.primary.opacity(prominent ? 0.35 : 0.18))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 6))
+    }
+}
+
 /// The popover shown from the menu bar item.
 struct MenuContentView: View {
     @EnvironmentObject private var model: AppViewModel
@@ -14,6 +39,10 @@ struct MenuContentView: View {
             header
             Divider()
             controls
+            if model.availableUpdate != nil || model.updateStatus != nil {
+                Divider()
+                updateRow
+            }
             if let error = model.rulesError {
                 Divider()
                 errorBadge(error)
@@ -38,8 +67,7 @@ struct MenuContentView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Image(systemName: "sparkles")
-                    .foregroundStyle(.tint)
+                Image(nsImage: MenuIcon.regular)
                 Text("Whisk")
                     .font(.headline)
                 Spacer()
@@ -48,14 +76,14 @@ struct MenuContentView: View {
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(.orange.opacity(0.2), in: Capsule())
+                        .background(.orange.opacity(0.25), in: Capsule())
                 }
                 if model.dryRun {
                     Text("Dry run")
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(.blue.opacity(0.2), in: Capsule())
+                        .background(.indigo.opacity(0.3), in: Capsule())
                 }
             }
             ForEach(model.statuses, id: \.path) { status in
@@ -84,9 +112,11 @@ struct MenuContentView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Button("Run Now") { model.runNow() }
+                    .buttonStyle(WhiskButtonStyle())
                 Spacer()
                 if model.paused {
                     Button("Resume") { model.resume() }
+                        .buttonStyle(WhiskButtonStyle())
                 } else {
                     Menu("Pause") {
                         Button("For 1 hour") { model.pauseOneHour() }
@@ -103,6 +133,25 @@ struct MenuContentView: View {
 
     private var dryRunBinding: Binding<Bool> {
         Binding(get: { model.dryRun }, set: { model.setDryRun($0) })
+    }
+
+    private var updateRow: some View {
+        HStack(spacing: 6) {
+            if let status = model.updateStatus {
+                ProgressView()
+                    .controlSize(.small)
+                Text(status)
+                    .font(.caption)
+            } else if let update = model.availableUpdate {
+                Image(systemName: "arrow.down.circle.fill")
+                    .foregroundStyle(.green)
+                Text("Whisk \(update.version) is available")
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Button("Install") { model.installUpdate() }
+                    .buttonStyle(WhiskButtonStyle(prominent: true))
+            }
+        }
     }
 
     private func errorBadge(_ message: String) -> some View {
@@ -128,9 +177,9 @@ struct MenuContentView: View {
                         .lineLimit(2)
                     HStack {
                         Button("Approve") { model.approve(key: item.key) }
-                            .controlSize(.small)
+                            .buttonStyle(WhiskButtonStyle(prominent: true))
                         Button("Reject") { model.reject(key: item.key) }
-                            .controlSize(.small)
+                            .buttonStyle(WhiskButtonStyle())
                     }
                 }
             }
@@ -148,7 +197,7 @@ struct MenuContentView: View {
                         .font(.caption)
                     Spacer()
                     Button("Re-enable") { model.unpauseRule(id: ruleID) }
-                        .controlSize(.small)
+                        .buttonStyle(WhiskButtonStyle())
                 }
             }
         }
@@ -161,10 +210,8 @@ struct MenuContentView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Button("Show all…") { openWindow(id: "activity") }
-                    .buttonStyle(.plain)
-                    .font(.caption)
-                    .foregroundStyle(.tint)
+                Button("Show All…") { openWindow(id: "activity") }
+                    .buttonStyle(WhiskButtonStyle())
             }
             if model.recent.isEmpty {
                 Text("Nothing yet — Whisk sweeps when files change.")
@@ -183,17 +230,25 @@ struct MenuContentView: View {
                 Button("Open Rules File") { model.openRulesFile() }
                 Button("Edit Rules…") { openWindow(id: "editor") }
             }
-            .controlSize(.small)
+            .buttonStyle(WhiskButtonStyle())
             Toggle("Notifications", isOn: $model.notificationsEnabled)
                 .toggleStyle(.checkbox)
                 .font(.caption)
             Toggle("Launch at login", isOn: $model.launchAtLogin)
                 .toggleStyle(.checkbox)
                 .font(.caption)
+            Toggle("Check for updates automatically", isOn: $model.autoCheckUpdates)
+                .toggleStyle(.checkbox)
+                .font(.caption)
+            Toggle("Install updates automatically", isOn: $model.autoInstallUpdates)
+                .toggleStyle(.checkbox)
+                .font(.caption)
             HStack {
+                Button("Check for Updates") { model.checkForUpdates() }
+                    .buttonStyle(WhiskButtonStyle())
                 Spacer()
                 Button("Quit Whisk") { NSApp.terminate(nil) }
-                    .controlSize(.small)
+                    .buttonStyle(WhiskButtonStyle())
             }
         }
     }
@@ -247,7 +302,7 @@ struct ActivityRow: View {
         switch entry.outcome {
         case "ok": return .green
         case "error": return .red
-        case "preview": return .blue
+        case "preview": return .indigo
         default: return .secondary
         }
     }

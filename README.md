@@ -131,6 +131,7 @@ consent prompts, nothing more. Whisk never touches a folder you didn't list.
 | 🗑 **Undo-friendly** | Trash, never delete. Every removal stays recoverable. |
 | 🔔 **Notifications you control** | per rule and globally, batched per sweep. |
 | 🔗 **Scriptable** | `whisk://sweep`, `pause`, `resume`, `dry-run` — plus an append-only JSONL activity log for your own tooling. |
+| 🔄 **Keeps itself fresh** | checks for new releases daily and offers them in the menu; flip one switch and it installs them itself. |
 
 <br>
 

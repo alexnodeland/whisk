@@ -103,6 +103,22 @@ protocol RulesFileAccessing: AnyObject {
     func write(_ data: Data)
 }
 
+/// Fetches update metadata and downloads release archives over HTTPS.
+protocol UpdateFetching: AnyObject {
+    /// GET `url` and deliver the body on the main queue, or nil on any failure.
+    func fetch(url: String, completion: @escaping (Data?) -> Void)
+    /// Download `url` to a temporary file and deliver its path on the main
+    /// queue, or nil on any failure.
+    func download(url: String, completion: @escaping (String?) -> Void)
+}
+
+/// Replaces the running app bundle with an unpacked update and relaunches.
+protocol UpdateInstalling: AnyObject {
+    /// Unpack `zipPath`, swap the bundle, and relaunch. Calls `completion` with
+    /// an error message only on failure — on success the process exits.
+    func install(zipPath: String, completion: @escaping (String?) -> Void)
+}
+
 /// Watches target directories and the rules file, reporting raw change events.
 protocol TargetWatching: AnyObject {
     /// Replace the set of watched target directories.

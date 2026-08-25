@@ -40,6 +40,8 @@ final class CoverageManifestTests: XCTestCase {
         "ActivityStore.swift": "FileHandle append to the JSONL log",
         "SystemScheduler.swift": "DispatchSourceTimer + wake notification",
         "SystemServices.swift": "Date(), UserDefaults, FileManager home",
+        "UpdateFetcher.swift": "URLSession network I/O",
+        "UpdateInstaller.swift": "spawns Process, replaces the bundle, terminates the app",
     ]
 
     /// The in-coverage manifest, as this test believes it to be. `test.sh` passes
@@ -63,6 +65,8 @@ final class CoverageManifestTests: XCTestCase {
         "Sources/AppSettings.swift",
         "Sources/WhiskRoute.swift",
         "Sources/SweepCoordinator.swift",
+        "Sources/UpdatePlanner.swift",
+        "Sources/UpdateCoordinator.swift",
     ]
 
     private func environmentValue(_ key: String) throws -> String {

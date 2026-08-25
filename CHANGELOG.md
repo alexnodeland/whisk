@@ -3,6 +3,18 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.2.0 — 2026-08-25
+
+- In-app updater (ADR 0012): daily background check against GitHub releases,
+  an Install button in the menu with a once-per-version notification, and an
+  opt-in "Install updates automatically" switch. Downloads the same
+  stable-named zip the Homebrew cask pins.
+- Menu bar icon is now the brand whisk (template-drawn, pause bars when
+  paused) instead of a generic SF Symbol.
+- Readability: popover buttons now draw their own high-contrast bezel — the
+  MenuBarExtra window never becomes key, so system bezels rendered their
+  washed-out "inactive" look — and accent-tinted text links are gone.
+
 ## v0.1.1 — 2026-08-25
 
 - Lower the minimum macOS from 26 to 14 (Sonoma). The 26 floor was inherited

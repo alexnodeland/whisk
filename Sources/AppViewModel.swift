@@ -3,6 +3,7 @@
 // intent. Holds NO decisions — if you are writing an `if` here, the decision
 // belongs in the coordinator or a policy type. Exempt from coverage and audit.
 
+import AppKit
 import Foundation
 import ServiceManagement
 import SwiftUI
@@ -19,16 +20,19 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var paused = false
     @Published private(set) var dryRun = false
     @Published var ruleSet: RuleSet?
+    @Published private(set) var availableUpdate: ReleaseInfo?
+    @Published private(set) var updateStatus: String?
 
     private(set) var rulesPath = ""
 
     private var coordinator: SweepCoordinator?
+    private var updates: UpdateCoordinator?
     private var rulesFile: RulesFileAccessing?
     private var settings: AppSettings?
 
-    /// The menu bar symbol; pause swaps it so the state reads at a glance.
-    var menuSymbol: String {
-        paused ? "pause.circle" : "sparkles"
+    /// The menu bar icon; pause swaps it so the state reads at a glance.
+    var menuIcon: NSImage {
+        paused ? MenuIcon.paused : MenuIcon.regular
     }
 
     func bind(coordinator: SweepCoordinator, rulesFile: RulesFileAccessing, settings: AppSettings) {
@@ -53,6 +57,20 @@ final class AppViewModel: ObservableObject {
         paused = coordinator.isPaused
         dryRun = coordinator.isDryRun
         ruleSet = coordinator.ruleSet
+    }
+
+    /// Mirror the update coordinator the same way.
+    func bindUpdates(_ updates: UpdateCoordinator) {
+        self.updates = updates
+        updates.onStateChange = { [weak self] in
+            Task { @MainActor in self?.refreshUpdates() }
+        }
+        refreshUpdates()
+    }
+
+    private func refreshUpdates() {
+        availableUpdate = updates?.availableUpdate
+        updateStatus = updates?.updateStatus
     }
 
     /// The full activity list for the activity window.
@@ -92,6 +110,26 @@ final class AppViewModel: ObservableObject {
     var rulesFileHasComments: Bool {
         let raw = String(decoding: rulesFile?.read() ?? Data(), as: UTF8.self)
         return raw.contains("//") || raw.contains("/*")
+    }
+
+    func checkForUpdates() { updates?.check() }
+
+    func installUpdate() { updates?.installAvailable() }
+
+    var autoCheckUpdates: Bool {
+        get { settings?.autoCheckUpdates ?? true }
+        set {
+            settings?.autoCheckUpdates = newValue
+            objectWillChange.send()
+        }
+    }
+
+    var autoInstallUpdates: Bool {
+        get { settings?.autoInstallUpdates ?? false }
+        set {
+            settings?.autoInstallUpdates = newValue
+            objectWillChange.send()
+        }
     }
 
     var notificationsEnabled: Bool {

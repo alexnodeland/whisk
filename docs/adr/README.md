@@ -13,6 +13,7 @@ Accepted; reversing one means a new superseding ADR.
 | [0006](0006-loop-guard-layers.md) | Four loop-protection layers | Accepted |
 | [0007](0007-shell-approval-argv-only.md) | Shell actions: argv-only + first-run approval | Accepted |
 | [0008](0008-trash-not-delete.md) | Trash, never delete | Accepted |
-| [0009](0009-defer-self-updater.md) | Defer the in-app updater to v2 | Accepted |
+| [0009](0009-defer-self-updater.md) | Defer the in-app updater to v2 | Superseded by 0012 |
 | [0010](0010-non-sandboxed-tcc.md) | Non-sandboxed; TCC prompts for folder access | Accepted |
 | [0011](0011-homebrew-cask-distribution.md) | Pinned Homebrew cask in alexnodeland/tap | Accepted |
+| [0012](0012-in-app-updater.md) | In-app updater: daily check, opt-in auto-install | Accepted |

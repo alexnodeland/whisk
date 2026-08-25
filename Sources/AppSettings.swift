@@ -53,6 +53,38 @@ struct AppSettings {
         nonmutating set { store.set(newValue ? nil : "1", forKey: "notificationsDisabled") }
     }
 
+    // MARK: Updates
+
+    /// Background update checks (default on).
+    var autoCheckUpdates: Bool {
+        get { store.string(forKey: "updatesAutoCheckDisabled") != "1" }
+        nonmutating set { store.set(newValue ? nil : "1", forKey: "updatesAutoCheckDisabled") }
+    }
+
+    /// Install found updates without asking (default off — ADR 0012).
+    var autoInstallUpdates: Bool {
+        get { store.string(forKey: "updatesAutoInstall") == "1" }
+        nonmutating set { store.set(newValue ? "1" : nil, forKey: "updatesAutoInstall") }
+    }
+
+    /// When the last background update check ran.
+    var lastUpdateCheck: Date? {
+        get {
+            guard let raw = store.string(forKey: "updatesLastCheck"), let epoch = TimeInterval(raw) else { return nil }
+            return Date(timeIntervalSince1970: epoch)
+        }
+        nonmutating set {
+            store.set(newValue.map { String($0.timeIntervalSince1970) }, forKey: "updatesLastCheck")
+        }
+    }
+
+    /// The last version an "update available" notification was posted for, so a
+    /// version notifies once rather than on every check.
+    var lastNotifiedUpdateVersion: String? {
+        get { store.string(forKey: "updatesLastNotified") }
+        nonmutating set { store.set(newValue, forKey: "updatesLastNotified") }
+    }
+
     // MARK: Auto-paused rules
 
     /// Rules paused by the runaway budget, persisted across launches.

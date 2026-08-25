@@ -73,4 +73,43 @@ final class AppSettingsTests: XCTestCase {
         settings.approvals = ApprovedCommands().approving("k")
         XCTAssertEqual(settings.approvals, ApprovedCommands().approving("k"))
     }
+
+    func testAutoCheckUpdatesDefaultsOnAndRoundTrips() {
+        let (settings, store) = make()
+        XCTAssertTrue(settings.autoCheckUpdates)
+        settings.autoCheckUpdates = false
+        XCTAssertFalse(settings.autoCheckUpdates)
+        settings.autoCheckUpdates = true
+        XCTAssertTrue(settings.autoCheckUpdates)
+        XCTAssertNil(store.values["updatesAutoCheckDisabled"])
+    }
+
+    func testAutoInstallUpdatesDefaultsOffAndRoundTrips() {
+        let (settings, store) = make()
+        XCTAssertFalse(settings.autoInstallUpdates)
+        settings.autoInstallUpdates = true
+        XCTAssertTrue(settings.autoInstallUpdates)
+        settings.autoInstallUpdates = false
+        XCTAssertFalse(settings.autoInstallUpdates)
+        XCTAssertNil(store.values["updatesAutoInstall"])
+    }
+
+    func testLastUpdateCheckRoundTripsAndRejectsGarbage() {
+        let (settings, store) = make()
+        XCTAssertNil(settings.lastUpdateCheck)
+        let instant = Date(timeIntervalSince1970: 1_234_567)
+        settings.lastUpdateCheck = instant
+        XCTAssertEqual(settings.lastUpdateCheck, instant)
+        settings.lastUpdateCheck = nil
+        XCTAssertNil(store.values["updatesLastCheck"])
+        store.values["updatesLastCheck"] = "not-a-number"
+        XCTAssertNil(settings.lastUpdateCheck)
+    }
+
+    func testLastNotifiedUpdateVersionRoundTrips() {
+        let (settings, _) = make()
+        XCTAssertNil(settings.lastNotifiedUpdateVersion)
+        settings.lastNotifiedUpdateVersion = "0.2.0"
+        XCTAssertEqual(settings.lastNotifiedUpdateVersion, "0.2.0")
+    }
 }

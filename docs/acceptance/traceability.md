@@ -18,6 +18,7 @@ integration/smoke scripts exercise the same behavior against the real system.
 | rules-reload | SweepCoordinatorTests |
 | pause-and-dry-run | AppSettingsTests, SweepCoordinatorTests |
 | url-scheme | WhiskRouteTests, SweepCoordinatorTests, scripts/smoke-test.sh |
+| updates | UpdatePlannerTests, UpdateCoordinatorTests, AppSettingsTests |
 
 ## Manual checklists (per release)
 

@@ -47,6 +47,11 @@ BUDGETS = {
     # The single ?? falls back to UserDefaults.standard when the
     # WHISK_DEFAULTS_SUITE test override is absent — wiring, not policy.
     "SystemServices.swift": 1,
+    "UpdateFetcher.swift": 1,
+    # All execution-mechanism guards: two launch do/catch, and the unpacked-
+    # bundle validity check before anything touches /Applications. Whether to
+    # install at all is decided in UpdateCoordinator, covered.
+    "UpdateInstaller.swift": 3,
 }
 
 # Files where branching is presentation or wiring, not policy.
