@@ -17,3 +17,4 @@ Accepted; reversing one means a new superseding ADR.
 | [0010](0010-non-sandboxed-tcc.md) | Non-sandboxed; TCC prompts for folder access | Accepted |
 | [0011](0011-homebrew-cask-distribution.md) | Pinned Homebrew cask in alexnodeland/tap | Accepted |
 | [0012](0012-in-app-updater.md) | In-app updater: daily check, opt-in auto-install | Accepted |
+| [0013](0013-comment-preserving-editor-saves.md) | Editor saves preserve comments (lossless document model) | Accepted |

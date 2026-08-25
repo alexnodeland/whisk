@@ -18,11 +18,34 @@ struct SettingsView: View {
                 .tabItem { Label("Appearance", systemImage: "paintbrush") }
             SetupSettingsTab()
                 .tabItem { Label("Setup", systemImage: "folder.badge.gearshape") }
+            ActivitySettingsTab()
+                .tabItem { Label("Activity", systemImage: "list.bullet.rectangle") }
             AboutSettingsTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 460)
+        .frame(width: 560)
         .environmentObject(model)
+    }
+}
+
+/// The activity log, browsable without leaving Settings.
+private struct ActivitySettingsTab: View {
+    @EnvironmentObject private var model: AppViewModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ActivityListView()
+                .frame(minWidth: 520, minHeight: 340)
+            HStack {
+                Text("Also on disk as JSONL, for your own tooling.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Open as Window") { openWindow(id: "activity") }
+            }
+        }
+        .padding(12)
     }
 }
 
@@ -151,8 +174,35 @@ private struct SetupSettingsTab: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
-            Section("Activity") {
-                Button("Open Activity Log Window") { openWindow(id: "activity") }
+            Section("Shell commands") {
+                if model.pending.isEmpty && model.approvedCommands.isEmpty {
+                    Text("No rule runs a shell command yet.")
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(model.pending, id: \.key) { item in
+                    LabeledContent {
+                        HStack {
+                            Button("Approve") { model.approve(key: item.key) }
+                            Button("Reject") { model.reject(key: item.key) }
+                        }
+                    } label: {
+                        Label(ApprovedCommands.display(key: item.key), systemImage: "hourglass")
+                            .font(.caption.monospaced())
+                            .lineLimit(2)
+                    }
+                }
+                ForEach(model.approvedCommands, id: \.self) { key in
+                    LabeledContent {
+                        Button("Revoke") { model.revokeApproval(key: key) }
+                    } label: {
+                        Label(ApprovedCommands.display(key: key), systemImage: "checkmark.shield")
+                            .font(.caption.monospaced())
+                            .lineLimit(2)
+                    }
+                }
+                Text("A command runs only after you approve that exact command once; revoking holds it again.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             Section("Scripting") {
                 LabeledContent("Sweep now", value: "whisk://sweep")

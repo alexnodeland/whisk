@@ -13,7 +13,12 @@ struct RuleEditorView: View {
     @EnvironmentObject private var model: AppViewModel
     @State private var draft: RuleSet?
     @State private var selectedTarget = 0
-    @State private var confirmCommentLoss = false
+    @State private var justSaved = false
+
+    /// Whether the draft differs from what the file currently holds.
+    private var isDirty: Bool {
+        draft != nil && draft != model.ruleSet
+    }
 
     var body: some View {
         Group {
@@ -28,7 +33,11 @@ struct RuleEditorView: View {
         }
         .frame(minWidth: 640, minHeight: 460)
         .onAppear { draft = model.ruleSet }
-        .onChange(of: model.ruleSet) { _, newValue in draft = newValue }
+        .onChange(of: model.ruleSet) { _, newValue in
+            // The file changed on disk (a save landing, or an outside edit).
+            // Only clobber the draft when it holds nothing the file doesn't.
+            if !isDirty { draft = newValue }
+        }
     }
 
     private func editor(_ set: RuleSet) -> some View {
@@ -40,37 +49,44 @@ struct RuleEditorView: View {
                     .frame(minWidth: 400)
             }
             Divider()
-            HStack {
-                Text(model.rulesPath)
+            HStack(spacing: 10) {
+                Text((model.rulesPath as NSString).abbreviatingWithTildeInPath)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                Text("Comments in the file are preserved when you save.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
                 Spacer()
-                Button("Revert") { draft = model.ruleSet }
-                Button("Save") {
-                    if model.rulesFileHasComments {
-                        confirmCommentLoss = true
-                    } else {
-                        save()
-                    }
+                if isDirty {
+                    Label("Unsaved changes", systemImage: "circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else if justSaved {
+                    Label("Saved", systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green)
                 }
-                .keyboardShortcut("s")
+                Button("Revert") { draft = model.ruleSet }
+                    .disabled(!isDirty)
+                Button("Save") { save() }
+                    .keyboardShortcut("s")
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!isDirty)
             }
             .padding(10)
-        }
-        .confirmationDialog(
-            "The rules file contains comments. Saving from the editor writes strict JSON and removes them.",
-            isPresented: $confirmCommentLoss
-        ) {
-            Button("Save and drop comments", role: .destructive) { save() }
-            Button("Cancel", role: .cancel) {}
         }
     }
 
     private func save() {
         guard let draft else { return }
         model.saveRules(draft)
+        justSaved = true
+        Task {
+            try? await Task.sleep(for: .seconds(2.5))
+            justSaved = false
+        }
     }
 
     // MARK: Targets
@@ -171,9 +187,14 @@ private struct RuleCard: View {
             HStack {
                 Toggle("", isOn: $rule.enabled)
                     .labelsHidden()
-                TextField("Rule name", text: nameBinding)
-                    .textFieldStyle(.plain)
+                    .help("Enable or disable this rule")
+                Image(systemName: "pencil")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                TextField("Rule name", text: nameBinding, prompt: Text("Name this rule…"))
+                    .textFieldStyle(.roundedBorder)
                     .font(.headline)
+                    .help("The rule's display name — click to rename")
                 Spacer()
                 if let onMoveUp {
                     Button(action: onMoveUp) { Image(systemName: "chevron.up") }
@@ -218,8 +239,10 @@ private struct SimpleMatch {
     var glob = ""
     var extensions = ""
     var kind: FileKind?
-    var olderThan = ""
-    var minSize = ""
+    /// Age threshold in seconds; nil (or 0) means no age condition.
+    var olderThanSeconds: TimeInterval?
+    /// Size threshold in bytes; nil (or 0) means no size condition.
+    var minSizeBytes: UInt64?
 
     init?(_ condition: Condition) {
         guard case .all(let parts) = condition else { return nil }
@@ -230,27 +253,27 @@ private struct SimpleMatch {
             case .kind(let value): kind = value
             case .age(let bound):
                 guard let seconds = bound.olderThanSeconds, bound.newerThanSeconds == nil, bound.basis == .added else { return nil }
-                olderThan = Units.formatDuration(seconds)
+                olderThanSeconds = seconds
             case .size(let bound):
                 guard let over = bound.overBytes, bound.underBytes == nil else { return nil }
-                minSize = Units.formatSize(over)
+                minSizeBytes = over
             default:
                 return nil
             }
         }
     }
 
-    /// Rebuild the condition tree from the form fields; unparsable fields drop out.
+    /// Rebuild the condition tree from the form fields; empty fields drop out.
     var condition: Condition {
         var parts: [Condition] = []
         if let kind { parts.append(.kind(kind)) }
         if !glob.isEmpty { parts.append(.name(.glob(glob))) }
         let exts = extensions.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         if !exts.isEmpty { parts.append(.extensions(exts)) }
-        if let seconds = Units.duration(olderThan) {
+        if let seconds = olderThanSeconds, seconds > 0 {
             parts.append(.age(AgeCondition(basis: .added, olderThanSeconds: seconds, newerThanSeconds: nil)))
         }
-        if let bytes = Units.size(minSize) {
+        if let bytes = minSizeBytes, bytes > 0 {
             parts.append(.size(SizeCondition(overBytes: bytes, underBytes: nil)))
         }
         return .all(parts.isEmpty ? [.kind(.file)] : parts)
@@ -287,20 +310,94 @@ private struct ConditionEditor: View {
             }
             GridRow {
                 Text("Older than").font(.caption)
-                TextField("7d", text: $match.olderThan)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.caption.monospaced())
-                    .frame(width: 80)
+                AmountUnitPicker(
+                    amount: Binding(
+                        get: { match.olderThanSeconds.map { UInt64($0) } },
+                        set: { match.olderThanSeconds = $0.map(TimeInterval.init) }),
+                    units: [("minutes", 60), ("hours", 3600), ("days", 86400), ("weeks", 604_800)],
+                    defaultUnit: 86400,
+                    offLabel: "any age")
             }
             GridRow {
                 Text("Larger than").font(.caption)
-                TextField("100KB", text: $match.minSize)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.caption.monospaced())
-                    .frame(width: 80)
+                AmountUnitPicker(
+                    amount: $match.minSizeBytes,
+                    units: [("KB", 1024), ("MB", 1024 * 1024), ("GB", 1024 * 1024 * 1024)],
+                    defaultUnit: 1024 * 1024,
+                    offLabel: "any size")
             }
         }
         .font(.caption)
+    }
+}
+
+/// A strict "number + unit" control for thresholds, replacing free-text values
+/// like "7d" or "100KB". Off (no threshold) is an explicit state with its own
+/// label, entered by clearing the number and left by typing one.
+private struct AmountUnitPicker: View {
+    @Binding var amount: UInt64?
+    let units: [(label: String, scale: UInt64)]
+    let defaultUnit: UInt64
+    let offLabel: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            TextField("—", value: valueBinding, format: .number)
+                .textFieldStyle(.roundedBorder)
+                .font(.caption.monospaced())
+                .multilineTextAlignment(.trailing)
+                .frame(width: 56)
+            Picker("", selection: unitBinding) {
+                ForEach(units, id: \.scale) { unit in
+                    Text(unit.label).tag(unit.scale)
+                }
+            }
+            .labelsHidden()
+            .fixedSize()
+            if amount == nil || amount == 0 {
+                Text(offLabel)
+                    .foregroundStyle(.tertiary)
+            } else {
+                Button {
+                    amount = nil
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .help("Remove this condition")
+            }
+        }
+    }
+
+    /// The largest unit that divides the stored amount evenly.
+    private var currentUnit: UInt64 {
+        guard let amount, amount > 0 else { return defaultUnit }
+        return units.reversed().first { amount % $0.scale == 0 }?.scale ?? units[0].scale
+    }
+
+    private var valueBinding: Binding<Int?> {
+        Binding(
+            get: {
+                guard let amount, amount > 0 else { return nil }
+                return Int(amount / currentUnit)
+            },
+            set: { newValue in
+                guard let newValue, newValue > 0 else {
+                    amount = nil
+                    return
+                }
+                amount = UInt64(newValue) * currentUnit
+            })
+    }
+
+    private var unitBinding: Binding<UInt64> {
+        Binding(
+            get: { currentUnit },
+            set: { newUnit in
+                let value = amount.map { max($0 / currentUnit, 1) } ?? 0
+                amount = value == 0 ? nil : value * newUnit
+            })
     }
 }
 
@@ -345,19 +442,29 @@ private struct ActionRowEditor: View {
             switch action {
             case .move(let spec):
                 Label("Move to", systemImage: "arrow.turn.down.right").font(.caption)
-                field(spec.to) { action = .move(MoveSpec(to: $0, onConflict: spec.onConflict)) }
+                field(spec.to, prompt: "~/folder/{date.modified:yyyy-MM}", help: Self.tokenHelp) {
+                    action = .move(MoveSpec(to: $0, onConflict: spec.onConflict))
+                }
             case .copy(let spec):
                 Label("Copy to", systemImage: "doc.on.doc").font(.caption)
-                field(spec.to) { action = .copy(MoveSpec(to: $0, onConflict: spec.onConflict)) }
+                field(spec.to, prompt: "~/folder/{date.modified:yyyy-MM}", help: Self.tokenHelp) {
+                    action = .copy(MoveSpec(to: $0, onConflict: spec.onConflict))
+                }
             case .rename(let spec):
                 Label("Rename to", systemImage: "pencil").font(.caption)
-                field(spec.to) { action = .rename(RenameSpec(to: $0)) }
+                field(spec.to, prompt: "{name}.{ext}", help: Self.tokenHelp) {
+                    action = .rename(RenameSpec(to: $0))
+                }
             case .trash:
                 Label("Move to Trash", systemImage: "trash").font(.caption)
                 Spacer()
             case .run(let spec):
                 Label("Run", systemImage: "terminal").font(.caption)
-                field(([spec.command] + spec.args).joined(separator: " ")) { text in
+                field(
+                    ([spec.command] + spec.args).joined(separator: " "),
+                    prompt: "/absolute/path/to/command --flag",
+                    help: "Absolute command path plus arguments; the matched file is appended as the final argument."
+                ) { text in
                     let parts = text.split(separator: " ").map(String.init)
                     action = .run(
                         RunSpec(
@@ -370,10 +477,18 @@ private struct ActionRowEditor: View {
         }
     }
 
-    private func field(_ value: String, set: @escaping (String) -> Void) -> some View {
-        TextField("", text: Binding(get: { value }, set: set))
+    /// The tokens every destination and rename pattern understands.
+    private static let tokenHelp =
+        "Tokens: {name} the filename without extension · {ext} the extension · "
+        + "{date.created|modified|added:FORMAT} e.g. {date.modified:yyyy-MM}"
+
+    private func field(
+        _ value: String, prompt: String, help: String, set: @escaping (String) -> Void
+    ) -> some View {
+        TextField("", text: Binding(get: { value }, set: set), prompt: Text(prompt))
             .textFieldStyle(.roundedBorder)
             .font(.caption.monospaced())
+            .help(help)
     }
 }
 

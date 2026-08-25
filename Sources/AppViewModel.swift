@@ -15,6 +15,7 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var statuses: [TargetStatus] = []
     @Published private(set) var recent: [ActivityEntry] = []
     @Published private(set) var pending: [PendingApproval] = []
+    @Published private(set) var approvedCommands: [String] = []
     @Published private(set) var autoPaused: [String] = []
     @Published private(set) var rulesError: String?
     @Published private(set) var paused = false
@@ -55,6 +56,7 @@ final class AppViewModel: ObservableObject {
         statuses = coordinator.targetStatuses.values.sorted { $0.path < $1.path }
         recent = coordinator.recentActivity.suffix(settings?.recentActivityCount ?? 10).reversed()
         pending = coordinator.pendingApprovals
+        approvedCommands = coordinator.approvedCommandKeys
         autoPaused = coordinator.autoPausedRules.sorted()
         rulesError = coordinator.lastError?.message
         paused = coordinator.isPaused
@@ -97,25 +99,26 @@ final class AppViewModel: ObservableObject {
 
     func reject(key: String) { coordinator?.reject(key: key) }
 
+    func revokeApproval(key: String) { coordinator?.revokeApproval(key: key) }
+
     func unpauseRule(id: String) { coordinator?.unpauseRule(id: id) }
 
     func openRulesFile() {
         NSWorkspace.shared.open(URL(fileURLWithPath: rulesPath))
     }
 
-    /// The editor writes strict JSON back to the rules file; the vnode watch
-    /// hot-reloads it.
+    /// The editor saves through the comment-preserving merge (ADR 0003): an
+    /// untouched rule keeps its text verbatim, an edited rule keeps its
+    /// leading comments. The vnode watch hot-reloads the result.
     func saveRules(_ set: RuleSet) {
-        rulesFile?.write(RuleParser.encode(set))
-    }
-
-    /// Whether the raw rules file contains comments the strict-JSON save would drop.
-    var rulesFileHasComments: Bool {
-        let raw = String(decoding: rulesFile?.read() ?? Data(), as: UTF8.self)
-        return raw.contains("//") || raw.contains("/*")
+        let original = String(decoding: rulesFile?.read() ?? Data(), as: UTF8.self)
+        rulesFile?.write(RulesText.encode(set, preserving: original))
     }
 
     func checkForUpdates() { updates?.check() }
+
+    /// The cadence-guarded background check (safe to call often).
+    func tickUpdates() { updates?.tick() }
 
     func installUpdate() { updates?.installAvailable() }
 

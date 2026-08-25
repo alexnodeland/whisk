@@ -68,6 +68,7 @@ final class CoverageManifestTests: XCTestCase {
         "Sources/SweepCoordinator.swift",
         "Sources/UpdatePlanner.swift",
         "Sources/UpdateCoordinator.swift",
+        "Sources/RulesText.swift",
     ]
 
     private func environmentValue(_ key: String) throws -> String {

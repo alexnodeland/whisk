@@ -238,6 +238,18 @@ final class SweepCoordinator {
         changed()
     }
 
+    /// The approved shell commands, for the Settings approvals list.
+    var approvedCommandKeys: [String] {
+        settings.approvals.approved.sorted()
+    }
+
+    /// Withdraw a previously granted approval; the command is held again the
+    /// next time a rule reaches it.
+    func revokeApproval(key: String) {
+        settings.approvals = settings.approvals.revoking(key)
+        changed()
+    }
+
     /// Re-enable a rule paused by the runaway budget.
     func unpauseRule(id: String) {
         settings.autoPausedRules = settings.autoPausedRules.subtracting([id])

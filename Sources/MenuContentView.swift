@@ -63,6 +63,10 @@ struct MenuContentView: View {
         }
         .padding(12)
         .frame(width: 320)
+        // Opening the menu is a moment the app is certainly awake — run the
+        // (cadence-guarded) update check so a stalled background timer can
+        // never leave the app permanently behind.
+        .onAppear { model.tickUpdates() }
     }
 
     private var header: some View {

@@ -38,8 +38,10 @@ would drop hand-written comments.
 - Rules diff, sync, and restore like any dotfile.
 
 ### Negative / trade-offs
-- A GUI save flattens comments (warned, and the file remains authoritative).
-- JSON5 is read-relaxed only; the editor writes strict JSON.
+- ~~A GUI save flattens comments (warned, and the file remains authoritative).~~
+  Amended by [ADR 0013](0013-comment-preserving-editor-saves.md): saves now
+  preserve comments through a lossless document model.
+- JSON5 is read-relaxed only; the editor normalizes formatting on save.
 
 ### Follow-ups
 - None for v1.

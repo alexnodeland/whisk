@@ -336,6 +336,23 @@ final class SweepCoordinatorTests: XCTestCase {
         XCTAssertTrue(h.coordinator!.recentActivity.last!.detail!.contains("failed to launch or timed out"))
     }
 
+    func testRevokeApprovalListsAndHoldsTheCommandAgain() {
+        let h = Harness()
+        h.setRules(runRules)
+        h.enumerator.tree["/U/d"] = [Fixtures.file("/U/d/a.zip")]
+        h.start()
+        let key = h.coordinator!.pendingApprovals[0].key
+        h.coordinator?.approve(key: key)
+        XCTAssertEqual(h.coordinator?.approvedCommandKeys, [key])
+
+        h.coordinator?.revokeApproval(key: key)
+        XCTAssertEqual(h.coordinator?.approvedCommandKeys, [])
+        h.clock.advance(60)
+        h.coordinator?.sweepAll()
+        XCTAssertEqual(h.coordinator?.pendingApprovals.map(\.key), [key], "revoked command is held again")
+        XCTAssertEqual(h.runner.requests.count, 1, "no further run without a fresh approval")
+    }
+
     func testRejectSilencesForSession() {
         let h = Harness()
         h.setRules(runRules)

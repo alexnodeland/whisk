@@ -14,9 +14,12 @@ final class RulesFileStore: RulesFileAccessing {
     }
 
     /// The default location, honoring a WHISK_RULES_FILE override (used by the
-    /// integration tests and the --sweep-once mode).
+    /// integration tests and the --sweep-once mode) and the XDG base-directory
+    /// convention `~/.config` follows (a set XDG_CONFIG_HOME relocates it).
     static func defaultPath(home: String) -> String {
-        ProcessInfo.processInfo.environment["WHISK_RULES_FILE"] ?? home + "/.config/whisk/rules.json"
+        let environment = ProcessInfo.processInfo.environment
+        let configHome = environment["XDG_CONFIG_HOME"] ?? home + "/.config"
+        return environment["WHISK_RULES_FILE"] ?? configHome + "/whisk/rules.json"
     }
 
     func read() -> Data? {

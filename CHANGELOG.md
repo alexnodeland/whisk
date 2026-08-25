@@ -3,6 +3,26 @@
 All notable changes to Whisk. Full release notes with downloads live on the
 [GitHub Releases page](https://github.com/alexnodeland/whisk/releases).
 
+## v0.4.0 — 2026-08-25
+
+- GUI saves preserve hand-written comments (ADR 0013): a lossless document
+  model keeps untouched rules verbatim and edited rules' leading comments;
+  the "comments will be dropped" dialog is gone
+- Editor clarity: an Unsaved-changes badge, a prominent Save with a "Saved"
+  confirmation, disabled Save/Revert when clean, an obviously-editable rule
+  name field, and token hints on move/rename/run patterns
+- Strict threshold pickers: age is a number with minutes/hours/days/weeks,
+  size a number with KB/MB/GB — no more "7d"/"100KB" codes in the form
+- Settings gains an Activity tab and a shell-approvals manager in Setup
+  (pending commands can be approved/rejected, granted ones revoked)
+- Fixed: launch could hang on the folder-access consent dialog — macOS
+  re-asks after every upgrade of an unsigned build, the first directory read
+  blocks inside the dialog, and on the main thread that starved the menu and
+  the updater's timers. Target folders are now probed on a background thread
+  before sweeping starts. Whisk also opts out of App Nap and re-checks for
+  updates on menu open and system wake
+- The rules file location honors `XDG_CONFIG_HOME` (default `~/.config`)
+
 ## v0.3.0 — 2026-08-25
 
 - Settings window (⌘, from the popover) with General (launch at login,

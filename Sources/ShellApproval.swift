@@ -44,6 +44,14 @@ struct ApprovedCommands: Equatable, Codable {
         return copy
     }
 
+    /// A copy with `key` no longer approved — the command is held again the
+    /// next time a rule reaches it.
+    func revoking(_ key: String) -> ApprovedCommands {
+        var copy = self
+        copy.approved.remove(key)
+        return copy
+    }
+
     /// Decode from the persisted JSON blob; nil or garbage yields the empty set.
     static func decode(from string: String?) -> ApprovedCommands {
         guard let string, let decoded = try? JSONDecoder().decode(ApprovedCommands.self, from: Data(string.utf8))

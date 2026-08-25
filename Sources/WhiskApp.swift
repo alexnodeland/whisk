@@ -70,6 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppViewModel()
     private var coordinator: SweepCoordinator?
     private var updates: UpdateCoordinator?
+    private var appNapToken: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let environment = ProcessInfo.processInfo.environment
@@ -103,8 +104,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             exit(0)
         }
 
-        coordinator.start()
-
         let updates = UpdateCoordinator(
             fetcher: UpdateFetcher(),
             installer: UpdateInstaller(),
@@ -117,10 +116,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.bindUpdates(updates)
         updates.start()
 
+        // A windowless menu bar app launched via `open` gets App Napped, and
+        // napped DispatchSourceTimers stall for minutes — the update check and
+        // age-based sweep wake-ups silently stop firing. This app's idle work
+        // is a timer tick and a directory listing; opt out of the nap.
+        appNapToken = ProcessInfo.processInfo.beginActivity(
+            options: .userInitiatedAllowingIdleSystemSleep,
+            reason: "Whisk watches folders and schedules sweeps")
+
+        // The first touch of a protected folder blocks inside the TCC
+        // consent dialog, and an unsigned build re-signs on every upgrade, so
+        // macOS re-asks. On the main thread that block starves everything —
+        // the menu, the run loop, and the updater's timers — until the dialog
+        // is answered. So: probe each target folder on a background thread
+        // first (only that thread waits on the dialog), and start sweeping
+        // once the folders are actually reachable.
+        let targets = (try? RuleParser.parse(rulesFile.read() ?? Data()).get().targets) ?? []
+        let probePaths =
+            targets.isEmpty
+            ? [home + "/Downloads"]  // first launch: the seed file's target
+            : targets.map { PatternRenderer.expandPath($0.path, home: home) }
+        DispatchQueue.global(qos: .utility).async {
+            for path in probePaths {
+                _ = try? FileManager.default.contentsOfDirectory(atPath: path)
+            }
+            DispatchQueue.main.async { coordinator.start() }
+        }
+
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
-        ) { [weak coordinator] _ in
+        ) { [weak coordinator, weak updates] _ in
             coordinator?.sweepAll()
+            updates?.tick()
         }
     }
 

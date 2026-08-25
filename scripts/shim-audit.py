@@ -42,7 +42,9 @@ BUDGETS = {
     "FileOps.swift": 2,
     "MetadataReader.swift": 1,
     "Notifier.swift": 0,
-    "RulesFileStore.swift": 1,
+    # Two ?? fallbacks: the WHISK_RULES_FILE test override, and the XDG
+    # convention's XDG_CONFIG_HOME → ~/.config default — wiring, not policy.
+    "RulesFileStore.swift": 2,
     "SystemScheduler.swift": 0,
     # The single ?? falls back to UserDefaults.standard when the
     # WHISK_DEFAULTS_SUITE test override is absent — wiring, not policy.

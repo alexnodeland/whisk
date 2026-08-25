@@ -84,6 +84,13 @@ near zero-branch (decisions get lifted into a tested pure function — see
   unexercised. Avoid unreachable defensive branches in core files (prefer
   `try!` on encodes that cannot fail, non-failable `String(decoding:)`, and
   testable fallbacks) or the gate will flag them.
+- **TCC consent blocks synchronously.** The first `contentsOfDirectory` on a
+  protected folder parks the calling thread inside the consent dialog — and
+  unsigned builds re-sign every release, so the dialog comes back after every
+  upgrade. Never enumerate targets on the main thread at launch; the
+  composition root probes them on a background queue first and only then
+  starts the coordinator. Sampling a "hung" Whisk that shows `__open` under
+  `MetadataReader.facts` means an unanswered TCC dialog, not a bug.
 - **Environment overrides** for headless/integration runs: `WHISK_HOME`,
   `WHISK_RULES_FILE`, `WHISK_DATA_DIR`, `WHISK_DEFAULTS_SUITE`, and the
   `--sweep-once` flag (sweeps once, then exits).

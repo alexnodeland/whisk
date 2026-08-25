@@ -23,6 +23,13 @@ final class ShellApprovalTests: XCTestCase {
         XCTAssertEqual(approved.gate(changed), .pending(key: ApprovedCommands.key(for: changed)))
     }
 
+    func testRevokingRemovesOnlyThatKey() {
+        let approved = ApprovedCommands().approving("a").approving("b")
+        let revoked = approved.revoking("a")
+        XCTAssertEqual(revoked, ApprovedCommands().approving("b"))
+        XCTAssertEqual(revoked.revoking("missing"), revoked)
+    }
+
     func testPersistenceRoundTrip() {
         let approved = ApprovedCommands().approving("a").approving("b")
         let decoded = ApprovedCommands.decode(from: approved.encoded())
