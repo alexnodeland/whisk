@@ -473,6 +473,13 @@ final class SweepCoordinatorTests: XCTestCase {
         XCTAssertTrue(h.files.log.contains("move /U/d/IMG.png -> /U/d/shot.png"))
     }
 
+    func testTargetRootRouting() {
+        let roots = ["/U/d", "/U/pics"]
+        XCTAssertEqual(SweepCoordinator.targetRoot(forEventPath: "/U/d/a.txt", roots: roots), "/U/d")
+        XCTAssertEqual(SweepCoordinator.targetRoot(forEventPath: "/U/pics", roots: roots), "/U/pics")
+        XCTAssertNil(SweepCoordinator.targetRoot(forEventPath: "/U/dd/a.txt", roots: roots))
+    }
+
     func testRunNowBeforeStartDoesNothing() {
         let h = Harness()
         h.coordinator?.runNow()

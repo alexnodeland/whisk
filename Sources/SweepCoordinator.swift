@@ -154,6 +154,12 @@ final class SweepCoordinator {
 
     // MARK: Events
 
+    /// Which watched root contains `path` (the event-routing decision the
+    /// FSEvents shim delegates here).
+    static func targetRoot(forEventPath path: String, roots: [String]) -> String? {
+        roots.first { path == $0 || path.hasPrefix($0 + "/") }
+    }
+
     /// A filesystem event inside a watched target.
     func targetEvent(target: String, path: String) {
         if guardState.shouldIgnoreEvent(at: path, now: clock.now()) { return }

@@ -34,6 +34,26 @@ struct FileFacts: Equatable {
         (name as NSString).deletingPathExtension
     }
 
+    /// Build facts from optional resource values, so the enumeration shim holds
+    /// no defaulting decisions: missing sizes are 0, a missing added date falls
+    /// back to the creation date, and missing dates fall back to now-neutral
+    /// distant past (which can only ever widen an age match).
+    static func fromResource(
+        path: String,
+        name: String,
+        isDirectory: Bool?,
+        size: Int?,
+        created: Date?,
+        modified: Date?,
+        added: Date?
+    ) -> FileFacts {
+        let createdDate = created ?? .distantPast
+        return FileFacts(
+            path: path, name: name, isDirectory: isDirectory ?? false,
+            size: UInt64(max(size ?? 0, 0)), created: createdDate,
+            modified: modified ?? createdDate, added: added ?? createdDate)
+    }
+
     /// The date selected by `basis`.
     func date(for basis: AgeBasis) -> Date {
         switch basis {

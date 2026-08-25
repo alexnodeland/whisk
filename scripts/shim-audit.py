@@ -32,15 +32,21 @@ SOURCES = ROOT / "Sources"
 # that the new branch is mechanism rather than a decision, and that claim belongs
 # in the diff — so record the reason next to the number.
 BUDGETS = {
-    "ActivityStore.swift": 3,
-    "CommandRunner.swift": 4,
-    "FSEventsWatcher.swift": 3,
-    "FileOps.swift": 4,
-    "MetadataReader.swift": 4,
-    "Notifier.swift": 1,
-    "RulesFileStore.swift": 4,
-    "SystemScheduler.swift": 2,
-    "SystemServices.swift": 0,
+    "ActivityStore.swift": 2,
+    "CommandRunner.swift": 3,
+    # All five are API mechanism, not policy: empty-array guard before
+    # FSEventStreamCreate, creation-failure guard, teardown guard, vnode fd
+    # guard, and the atomic-save re-arm check. Event-to-target routing (the one
+    # real decision) lives in SweepCoordinator.targetRoot, covered.
+    "FSEventsWatcher.swift": 5,
+    "FileOps.swift": 2,
+    "MetadataReader.swift": 1,
+    "Notifier.swift": 0,
+    "RulesFileStore.swift": 1,
+    "SystemScheduler.swift": 0,
+    # The single ?? falls back to UserDefaults.standard when the
+    # WHISK_DEFAULTS_SUITE test override is absent — wiring, not policy.
+    "SystemServices.swift": 1,
 }
 
 # Files where branching is presentation or wiring, not policy.
